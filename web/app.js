@@ -5,7 +5,7 @@
  *
  * No framework, no build step, no backend: the page reads the very same assets
  * the Android app ships (../app/src/main/assets/usfm/kjv) and keeps everything
- * else in localStorage. The parsers below are ports of UsfmParser.kt and
+ * else in localStorage. The parsers are ports of UsfmParser.kt and
  * StrongsRepository.kt, kept close to the original where it matters, so a verse
  * reads the same in both.
  */
@@ -15,76 +15,121 @@ const DATA = new URL('../app/src/main/assets/usfm/kjv/', document.baseURI).href;
 /* Canonical order, with the asset index each book's files are named after
    (there is no book_40) and the chapter count that goes with it. */
 const BOOKS = [
-  { id: 'GEN', name: 'Genesis', ai: 1, chapters: 50, ot: true },
-  { id: 'EXO', name: 'Exodus', ai: 2, chapters: 40, ot: true },
-  { id: 'LEV', name: 'Leviticus', ai: 3, chapters: 27, ot: true },
-  { id: 'NUM', name: 'Numbers', ai: 4, chapters: 36, ot: true },
-  { id: 'DEU', name: 'Deuteronomy', ai: 5, chapters: 34, ot: true },
-  { id: 'JOS', name: 'Joshua', ai: 6, chapters: 24, ot: true },
-  { id: 'JDG', name: 'Judges', ai: 7, chapters: 21, ot: true },
-  { id: 'RUT', name: 'Ruth', ai: 8, chapters: 4, ot: true },
-  { id: '1SA', name: '1 Samuel', ai: 9, chapters: 31, ot: true },
-  { id: '2SA', name: '2 Samuel', ai: 10, chapters: 24, ot: true },
-  { id: '1KI', name: '1 Kings', ai: 11, chapters: 22, ot: true },
-  { id: '2KI', name: '2 Kings', ai: 12, chapters: 25, ot: true },
-  { id: '1CH', name: '1 Chronicles', ai: 13, chapters: 29, ot: true },
-  { id: '2CH', name: '2 Chronicles', ai: 14, chapters: 36, ot: true },
-  { id: 'EZR', name: 'Ezra', ai: 15, chapters: 10, ot: true },
-  { id: 'NEH', name: 'Nehemiah', ai: 16, chapters: 13, ot: true },
-  { id: 'EST', name: 'Esther', ai: 17, chapters: 10, ot: true },
-  { id: 'JOB', name: 'Job', ai: 18, chapters: 42, ot: true },
-  { id: 'PSA', name: 'Psalms', ai: 19, chapters: 150, ot: true },
-  { id: 'PRO', name: 'Proverbs', ai: 20, chapters: 31, ot: true },
-  { id: 'ECC', name: 'Ecclesiastes', ai: 21, chapters: 12, ot: true },
-  { id: 'SNG', name: 'Song of Solomon', ai: 22, chapters: 8, ot: true },
-  { id: 'ISA', name: 'Isaiah', ai: 23, chapters: 66, ot: true },
-  { id: 'JER', name: 'Jeremiah', ai: 24, chapters: 52, ot: true },
-  { id: 'LAM', name: 'Lamentations', ai: 25, chapters: 5, ot: true },
-  { id: 'EZK', name: 'Ezekiel', ai: 26, chapters: 48, ot: true },
-  { id: 'DAN', name: 'Daniel', ai: 27, chapters: 12, ot: true },
-  { id: 'HOS', name: 'Hosea', ai: 28, chapters: 14, ot: true },
-  { id: 'JOL', name: 'Joel', ai: 29, chapters: 3, ot: true },
-  { id: 'AMO', name: 'Amos', ai: 30, chapters: 9, ot: true },
-  { id: 'OBA', name: 'Obadiah', ai: 31, chapters: 1, ot: true },
-  { id: 'JON', name: 'Jonah', ai: 32, chapters: 4, ot: true },
-  { id: 'MIC', name: 'Micah', ai: 33, chapters: 7, ot: true },
-  { id: 'NAM', name: 'Nahum', ai: 34, chapters: 3, ot: true },
-  { id: 'HAB', name: 'Habakkuk', ai: 35, chapters: 3, ot: true },
-  { id: 'ZEP', name: 'Zephaniah', ai: 36, chapters: 3, ot: true },
-  { id: 'HAG', name: 'Haggai', ai: 37, chapters: 2, ot: true },
-  { id: 'ZEC', name: 'Zechariah', ai: 38, chapters: 14, ot: true },
-  { id: 'MAL', name: 'Malachi', ai: 39, chapters: 4, ot: true },
-  { id: 'MAT', name: 'Matthew', ai: 41, chapters: 28, ot: false },
-  { id: 'MRK', name: 'Mark', ai: 42, chapters: 16, ot: false },
-  { id: 'LUK', name: 'Luke', ai: 43, chapters: 24, ot: false },
-  { id: 'JHN', name: 'John', ai: 44, chapters: 21, ot: false },
-  { id: 'ACT', name: 'Acts', ai: 45, chapters: 28, ot: false },
-  { id: 'ROM', name: 'Romans', ai: 46, chapters: 16, ot: false },
-  { id: '1CO', name: '1 Corinthians', ai: 47, chapters: 16, ot: false },
-  { id: '2CO', name: '2 Corinthians', ai: 48, chapters: 13, ot: false },
-  { id: 'GAL', name: 'Galatians', ai: 49, chapters: 6, ot: false },
-  { id: 'EPH', name: 'Ephesians', ai: 50, chapters: 6, ot: false },
-  { id: 'PHP', name: 'Philippians', ai: 51, chapters: 4, ot: false },
-  { id: 'COL', name: 'Colossians', ai: 52, chapters: 4, ot: false },
-  { id: '1TH', name: '1 Thessalonians', ai: 53, chapters: 5, ot: false },
-  { id: '2TH', name: '2 Thessalonians', ai: 54, chapters: 3, ot: false },
-  { id: '1TI', name: '1 Timothy', ai: 55, chapters: 6, ot: false },
-  { id: '2TI', name: '2 Timothy', ai: 56, chapters: 4, ot: false },
-  { id: 'TIT', name: 'Titus', ai: 57, chapters: 3, ot: false },
-  { id: 'PHM', name: 'Philemon', ai: 58, chapters: 1, ot: false },
-  { id: 'HEB', name: 'Hebrews', ai: 59, chapters: 13, ot: false },
-  { id: 'JAS', name: 'James', ai: 60, chapters: 5, ot: false },
-  { id: '1PE', name: '1 Peter', ai: 61, chapters: 5, ot: false },
-  { id: '2PE', name: '2 Peter', ai: 62, chapters: 3, ot: false },
-  { id: '1JN', name: '1 John', ai: 63, chapters: 5, ot: false },
-  { id: '2JN', name: '2 John', ai: 64, chapters: 1, ot: false },
-  { id: '3JN', name: '3 John', ai: 65, chapters: 1, ot: false },
-  { id: 'JUD', name: 'Jude', ai: 66, chapters: 1, ot: false },
-  { id: 'REV', name: 'Revelation', ai: 67, chapters: 22, ot: false }
+  { id: 'GEN', name: 'Genesis', ai: 1, chapters: 50 },
+  { id: 'EXO', name: 'Exodus', ai: 2, chapters: 40 },
+  { id: 'LEV', name: 'Leviticus', ai: 3, chapters: 27 },
+  { id: 'NUM', name: 'Numbers', ai: 4, chapters: 36 },
+  { id: 'DEU', name: 'Deuteronomy', ai: 5, chapters: 34 },
+  { id: 'JOS', name: 'Joshua', ai: 6, chapters: 24 },
+  { id: 'JDG', name: 'Judges', ai: 7, chapters: 21 },
+  { id: 'RUT', name: 'Ruth', ai: 8, chapters: 4 },
+  { id: '1SA', name: '1 Samuel', ai: 9, chapters: 31 },
+  { id: '2SA', name: '2 Samuel', ai: 10, chapters: 24 },
+  { id: '1KI', name: '1 Kings', ai: 11, chapters: 22 },
+  { id: '2KI', name: '2 Kings', ai: 12, chapters: 25 },
+  { id: '1CH', name: '1 Chronicles', ai: 13, chapters: 29 },
+  { id: '2CH', name: '2 Chronicles', ai: 14, chapters: 36 },
+  { id: 'EZR', name: 'Ezra', ai: 15, chapters: 10 },
+  { id: 'NEH', name: 'Nehemiah', ai: 16, chapters: 13 },
+  { id: 'EST', name: 'Esther', ai: 17, chapters: 10 },
+  { id: 'JOB', name: 'Job', ai: 18, chapters: 42 },
+  { id: 'PSA', name: 'Psalms', ai: 19, chapters: 150 },
+  { id: 'PRO', name: 'Proverbs', ai: 20, chapters: 31 },
+  { id: 'ECC', name: 'Ecclesiastes', ai: 21, chapters: 12 },
+  { id: 'SNG', name: 'Song of Solomon', ai: 22, chapters: 8 },
+  { id: 'ISA', name: 'Isaiah', ai: 23, chapters: 66 },
+  { id: 'JER', name: 'Jeremiah', ai: 24, chapters: 52 },
+  { id: 'LAM', name: 'Lamentations', ai: 25, chapters: 5 },
+  { id: 'EZK', name: 'Ezekiel', ai: 26, chapters: 48 },
+  { id: 'DAN', name: 'Daniel', ai: 27, chapters: 12 },
+  { id: 'HOS', name: 'Hosea', ai: 28, chapters: 14 },
+  { id: 'JOL', name: 'Joel', ai: 29, chapters: 3 },
+  { id: 'AMO', name: 'Amos', ai: 30, chapters: 9 },
+  { id: 'OBA', name: 'Obadiah', ai: 31, chapters: 1 },
+  { id: 'JON', name: 'Jonah', ai: 32, chapters: 4 },
+  { id: 'MIC', name: 'Micah', ai: 33, chapters: 7 },
+  { id: 'NAM', name: 'Nahum', ai: 34, chapters: 3 },
+  { id: 'HAB', name: 'Habakkuk', ai: 35, chapters: 3 },
+  { id: 'ZEP', name: 'Zephaniah', ai: 36, chapters: 3 },
+  { id: 'HAG', name: 'Haggai', ai: 37, chapters: 2 },
+  { id: 'ZEC', name: 'Zechariah', ai: 38, chapters: 14 },
+  { id: 'MAL', name: 'Malachi', ai: 39, chapters: 4 },
+  { id: 'MAT', name: 'Matthew', ai: 41, chapters: 28 },
+  { id: 'MRK', name: 'Mark', ai: 42, chapters: 16 },
+  { id: 'LUK', name: 'Luke', ai: 43, chapters: 24 },
+  { id: 'JHN', name: 'John', ai: 44, chapters: 21 },
+  { id: 'ACT', name: 'Acts', ai: 45, chapters: 28 },
+  { id: 'ROM', name: 'Romans', ai: 46, chapters: 16 },
+  { id: '1CO', name: '1 Corinthians', ai: 47, chapters: 16 },
+  { id: '2CO', name: '2 Corinthians', ai: 48, chapters: 13 },
+  { id: 'GAL', name: 'Galatians', ai: 49, chapters: 6 },
+  { id: 'EPH', name: 'Ephesians', ai: 50, chapters: 6 },
+  { id: 'PHP', name: 'Philippians', ai: 51, chapters: 4 },
+  { id: 'COL', name: 'Colossians', ai: 52, chapters: 4 },
+  { id: '1TH', name: '1 Thessalonians', ai: 53, chapters: 5 },
+  { id: '2TH', name: '2 Thessalonians', ai: 54, chapters: 3 },
+  { id: '1TI', name: '1 Timothy', ai: 55, chapters: 6 },
+  { id: '2TI', name: '2 Timothy', ai: 56, chapters: 4 },
+  { id: 'TIT', name: 'Titus', ai: 57, chapters: 3 },
+  { id: 'PHM', name: 'Philemon', ai: 58, chapters: 1 },
+  { id: 'HEB', name: 'Hebrews', ai: 59, chapters: 13 },
+  { id: 'JAS', name: 'James', ai: 60, chapters: 5 },
+  { id: '1PE', name: '1 Peter', ai: 61, chapters: 5 },
+  { id: '2PE', name: '2 Peter', ai: 62, chapters: 3 },
+  { id: '1JN', name: '1 John', ai: 63, chapters: 5 },
+  { id: '2JN', name: '2 John', ai: 64, chapters: 1 },
+  { id: '3JN', name: '3 John', ai: 65, chapters: 1 },
+  { id: 'JUD', name: 'Jude', ai: 66, chapters: 1 },
+  { id: 'REV', name: 'Revelation', ai: 67, chapters: 22 }
+];
+
+/* The groups the printed Bible uses, as ranges over BOOKS. */
+const GROUPS = [
+  ['PENTATEUCH', 0, 4, true],
+  ['HISTORY', 5, 16, true],
+  ['POETRY & WISDOM', 17, 21, true],
+  ['MAJOR PROPHETS', 22, 26, true],
+  ['MINOR PROPHETS', 27, 38, true],
+  ['GOSPELS', 39, 42, false],
+  ['APOSTOLIC HISTORY', 43, 43, false],
+  ['PAULINE EPISTLES', 44, 55, false],
+  ['GENERAL EPISTLES', 56, 64, false],
+  ['APOCALYPTIC', 65, 65, false]
 ];
 
 const DEFAULTS = { size: 18, spacing: 1.35, serif: false, italics: true, footnotes: true, theme: 'default' };
 const HL_COLORS = ['yellow', 'green', 'blue', 'red'];
+const THEMES = [
+  ['default', 'Default', '#fbfaf7'],
+  ['paper', 'Paper', '#f6f1e6'],
+  ['sepia', 'Sepia', '#efe3cd'],
+  ['grey', 'Grey', '#2a2b2d'],
+  ['night', 'Night', '#101012']
+];
+
+/* Abbreviations that resolve to a book. A bare "j" is John, "j3.15" is
+   John 3:15 - the shorthand the owner asked for. */
+const ABBREVIATIONS = {
+  gen: 'GEN', ge: 'GEN', ex: 'EXO', exo: 'EXO', lev: 'LEV', le: 'LEV', num: 'NUM', nu: 'NUM',
+  deu: 'DEU', deut: 'DEU', dt: 'DEU', jos: 'JOS', jdg: 'JDG', jg: 'JDG', rut: 'RUT', ru: 'RUT',
+  '1sa': '1SA', '1sam': '1SA', '2sa': '2SA', '2sam': '2SA', '1ki': '1KI', '1kg': '1KI',
+  '2ki': '2KI', '2kg': '2KI', '1ch': '1CH', '1chr': '1CH', '2ch': '2CH', '2chr': '2CH',
+  ezr: 'EZR', neh: 'NEH', est: 'EST', job: 'JOB', ps: 'PSA', psa: 'PSA', psm: 'PSA',
+  psalm: 'PSA', pro: 'PRO', prv: 'PRO', prov: 'PRO', ecc: 'ECC', ec: 'ECC', eccl: 'ECC',
+  sng: 'SNG', sos: 'SNG', song: 'SNG', isa: 'ISA', is: 'ISA', jer: 'JER', je: 'JER',
+  lam: 'LAM', la: 'LAM', ezk: 'EZK', eze: 'EZK', ezek: 'EZK', dan: 'DAN', da: 'DAN',
+  hos: 'HOS', ho: 'HOS', jol: 'JOL', joe: 'JOL', joel: 'JOL', amo: 'AMO', am: 'AMO',
+  oba: 'OBA', ob: 'OBA', jon: 'JON', mic: 'MIC', mi: 'MIC', nam: 'NAM', nah: 'NAM',
+  hab: 'HAB', zep: 'ZEP', zeph: 'ZEP', hag: 'HAG', zec: 'ZEC', zech: 'ZEC', mal: 'MAL',
+  mat: 'MAT', mt: 'MAT', mrk: 'MRK', mk: 'MRK', luk: 'LUK', lk: 'LUK', jhn: 'JHN',
+  jn: 'JHN', joh: 'JHN', j: 'JHN', act: 'ACT', ac: 'ACT', rom: 'ROM', ro: 'ROM',
+  '1co': '1CO', '1cor': '1CO', '2co': '2CO', '2cor': '2CO', gal: 'GAL', ga: 'GAL',
+  eph: 'EPH', php: 'PHP', phil: 'PHP', col: 'COL', '1th': '1TH', '1thess': '1TH',
+  '2th': '2TH', '2thess': '2TH', '1ti': '1TI', '1tim': '1TI', '2ti': '2TI', '2tim': '2TI',
+  tit: 'TIT', phm: 'PHM', heb: 'HEB', jas: 'JAS', ja: 'JAS', '1pe': '1PE', '1pet': '1PE',
+  '2pe': '2PE', '2pet': '2PE', '1jn': '1JN', '2jn': '2JN', '3jn': '3JN', jud: 'JUD',
+  jude: 'JUD', rev: 'REV', re: 'REV'
+};
 
 /* ------------------------------------------------------------------ storage */
 
@@ -439,9 +484,9 @@ function websterKey(word) {
 
 /* -------------------------------------------------------------- data access */
 
-const rawCache = new Map();    /* url -> text */
-const bookCache = new Map();   /* asset index -> chapters */
-const wordsCache = new Map();  /* asset index -> Map */
+const rawCache = new Map();
+const bookCache = new Map();
+const wordsCache = new Map();
 let lexicon = null;
 let webster = null;
 
@@ -500,6 +545,8 @@ async function loadWebster() {
   return map;
 }
 
+const breathe = () => new Promise((resolve) => setTimeout(resolve, 0));
+
 /* ---------------------------------------------------------------- the page */
 
 const content = document.getElementById('content');
@@ -538,8 +585,6 @@ function textFragment(verse) {
   if (prefs.footnotes) {
     verse.footnotes.forEach((note, index) => points.push({ at: note.anchor, kind: 'note', note, index }));
   }
-  /* A close sits before an open at the same offset, so "supplied" runs do not
-     swallow each other. */
   points.sort((a, b) => a.at - b.at || (a.kind === 'close' ? -1 : 1));
 
   let parent = fragment;
@@ -655,10 +700,20 @@ function step(delta) {
   go(book, chapter);
 }
 
-function go(book, chapter) {
+function go(book, chapter, verse) {
   state.book = book;
   state.chapter = Math.min(Math.max(1, chapter), book.chapters);
-  render(true);
+  render(true).then(() => {
+    if (verse) revealVerse(verse);
+  });
+}
+
+function revealVerse(verse) {
+  const node = content.querySelector('[data-v="' + verse + '"]');
+  if (!node) return;
+  node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  node.classList.add('flash');
+  setTimeout(() => node.classList.remove('flash'), 1400);
 }
 
 /* ------------------------------------------------------------------ sheets */
@@ -736,8 +791,10 @@ async function wordStudy(verse, index) {
   body.append(notice);
 
   let english = null;
+  let dictionary = null;
   try {
-    english = (await loadWebster()).get(websterKey(label)) || null;
+    dictionary = await loadWebster();
+    english = dictionary.get(websterKey(label)) || null;
   } catch (e) { /* no dictionary */ }
 
   let entry = null;
@@ -762,6 +819,22 @@ async function wordStudy(verse, index) {
     credit.className = 'credit';
     credit.textContent = 'Webster\u2019s 1828 American Dictionary of the English Language \u00B7 CC BY-SA 4.0';
     body.append(labelEl, text, credit);
+
+    /* "BROUGHT, ... preterit of bring, [See Bring.]" is a signpost, not a
+       definition. Short entries carry the entry they point at, once. */
+    const base = pointedWord(english);
+    if (base) {
+      const next = dictionary.get(websterKey(base));
+      if (next && next !== english) {
+        const alsoLabel = document.createElement('h3');
+        alsoLabel.textContent = 'SEE ALSO \u00B7 ' + base.toUpperCase();
+        const also = document.createElement('p');
+        also.className = 'entry';
+        also.style.whiteSpace = 'pre-line';
+        also.textContent = base.toUpperCase() + ', ' + next;
+        body.append(alsoLabel, also);
+      }
+    }
   }
 
   if (!id) {
@@ -804,12 +877,112 @@ async function wordStudy(verse, index) {
   }
   if (entry.kjv) {
     const labelEl = document.createElement('h3');
-    labelEl.textContent = 'KJV:';
+    labelEl.textContent = 'TRANSLATED AS, IN THE KJV';
     const kjv = document.createElement('p');
     kjv.className = 'muted';
     kjv.textContent = entry.kjv;
     body.append(labelEl, kjv);
   }
+
+  const every = document.createElement('button');
+  every.type = 'button';
+  every.className = 'wide subtle';
+  every.textContent = 'Every occurrence of ' + id;
+  every.addEventListener('click', () => openOccurrences(id, label));
+  body.append(every);
+}
+
+/* The word a short Webster entry points at: "… of bring, … [See Bring.]" */
+function pointedWord(definition) {
+  if (!definition || definition.length > 200) return null;
+  const match = /(?:of|see)\s+([A-Za-z][A-Za-z'-]{2,})/i.exec(definition);
+  return match ? match[1].toLowerCase() : null;
+}
+
+/* ------------------------------------------------------------ occurrences */
+
+let occurrenceMap = null;
+
+/* strongs number -> packed book/chapter/verse, over the whole Bible. */
+async function buildOccurrences(progress) {
+  if (occurrenceMap) return occurrenceMap;
+  const map = new Map();
+  for (let i = 0; i < BOOKS.length; i++) {
+    const book = BOOKS[i];
+    progress?.(i + 1, BOOKS.length, book.name);
+    let words = new Map();
+    try {
+      words = parseWords(await fetchText(DATA + 'words_' + book.ai));
+    } catch (e) {
+      continue;
+    }
+    for (const [key, entries] of words) {
+      const chapter = Math.floor(key / 1000);
+      const verse = key % 1000;
+      const packed = i * 1000000 + chapter * 1000 + verse;
+      for (const item of entries) {
+        if (!item.strongs) continue;
+        let refs = map.get(item.strongs);
+        if (!refs) map.set(item.strongs, refs = []);
+        if (refs[refs.length - 1] !== packed) refs.push(packed);
+      }
+    }
+    await breathe();
+  }
+  occurrenceMap = map;
+  return map;
+}
+
+async function openOccurrences(id, label) {
+  const body = sheet(label + ' \u00B7 ' + id);
+  const progress = document.createElement('p');
+  progress.className = 'muted';
+  progress.textContent = 'Counting the occurrences\u2026';
+  body.append(progress);
+
+  let map;
+  try {
+    map = await buildOccurrences((done, total, name) => {
+      progress.textContent = 'Reading ' + name + '\u2026 ' + done + ' of ' + total;
+    });
+  } catch (error) {
+    progress.textContent = 'Could not build the index: ' + error.message;
+    return;
+  }
+
+  const refs = (map.get(id) || []).slice();
+  progress.remove();
+
+  if (!refs.length) {
+    const none = document.createElement('p');
+    none.className = 'muted';
+    none.textContent = 'No occurrences are recorded for this number.';
+    body.append(none);
+    return;
+  }
+
+  const head = document.createElement('p');
+  head.className = 'muted';
+  head.textContent = refs.length + (refs.length === 1 ? ' verse' : ' verses');
+  const list = document.createElement('div');
+  list.className = 'results';
+
+  for (const packed of refs) {
+    const book = BOOKS[Math.floor(packed / 1000000)];
+    const chapter = Math.floor((packed % 1000000) / 1000);
+    const verse = packed % 1000;
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'result';
+    row.textContent = book.name + ' ' + chapter + ':' + verse;
+    row.addEventListener('click', () => {
+      closeSheet();
+      go(book, chapter, verse);
+    });
+    list.append(row);
+  }
+
+  body.append(head, list);
 }
 
 /* -------------------------------------------------------------- verse menu */
@@ -885,22 +1058,31 @@ function openVerseMenu(verse) {
   const copyVerse = document.createElement('button');
   copyVerse.type = 'button';
   copyVerse.className = 'wide';
-  copyVerse.textContent = 'Copy verse';
+  copyVerse.textContent = 'Copy verse and reference';
   copyVerse.addEventListener('click', () => {
     copy(verse.text + '\n' + reference + ' (KJV)');
+    closeSheet();
+  });
+
+  const copyText = document.createElement('button');
+  copyText.type = 'button';
+  copyText.className = 'wide subtle';
+  copyText.textContent = 'Copy verse only';
+  copyText.addEventListener('click', () => {
+    copy(verse.text);
     closeSheet();
   });
 
   const copyReference = document.createElement('button');
   copyReference.type = 'button';
   copyReference.className = 'wide subtle';
-  copyReference.textContent = 'Copy reference';
+  copyReference.textContent = 'Copy reference only';
   copyReference.addEventListener('click', () => {
     copy(reference);
     closeSheet();
   });
 
-  body.append(copyVerse, copyReference);
+  body.append(copyVerse, copyText, copyReference);
 }
 
 function copy(text) {
@@ -945,7 +1127,221 @@ function openFootnotes(verse, index) {
   }
 }
 
-/* --------------------------------------------------------------- pickers */
+/* ---------------------------------------------------------------- search */
+
+let searchVerses = null;
+
+async function buildSearchIndex(progress) {
+  if (searchVerses) return searchVerses;
+  const list = [];
+  for (let i = 0; i < BOOKS.length; i++) {
+    progress?.(i, BOOKS.length, BOOKS[i].name);
+    let chapters = [];
+    try {
+      chapters = await loadBook(BOOKS[i]);
+    } catch (e) { /* skip a book that will not load */ }
+    for (const chapter of chapters) {
+      for (const verse of chapter.verses) {
+        list.push({
+          book: BOOKS[i],
+          chapter: chapter.number,
+          verse: verse.number,
+          text: verse.text,
+          lower: verse.text.toLowerCase()
+        });
+      }
+    }
+    await breathe();
+  }
+  searchVerses = list;
+  progress?.(BOOKS.length, BOOKS.length, '');
+  return list;
+}
+
+function parseReference(input) {
+  const text = input.trim().toLowerCase().replace(/\s+/g, ' ');
+  const match = /^([1-3]?\s?[a-z]+)\.?\s*(\d{1,3})(?:\s*[.:]\s*(\d{1,3}))?$/.exec(text);
+  if (!match) return null;
+
+  const name = match[1].replace(/\s+/g, '');
+  let book = null;
+  const id = ABBREVIATIONS[name] || ABBREVIATIONS[name.slice(0, 4)] || ABBREVIATIONS[name.slice(0, 3)];
+  if (id) book = BOOKS.find((b) => b.id === id);
+  if (!book) {
+    book = BOOKS.find((b) => b.name.toLowerCase() === name) ||
+           BOOKS.find((b) => b.name.toLowerCase().startsWith(name)) ||
+           BOOKS.find((b) => b.name.toLowerCase().replace(/\s+/g, '').startsWith(name));
+  }
+  if (!book) return null;
+
+  const chapter = Math.min(Math.max(1, Number(match[2])), book.chapters);
+  const verse = match[3] ? Math.max(1, Number(match[3])) : 0;
+  return { book, chapter, verse };
+}
+
+function isReferenceOnly(input) {
+  return parseReference(input) !== null && !/\s\s|"/.test(input);
+}
+
+function wordStart(text, term) {
+  let from = 0;
+  while (true) {
+    const at = text.indexOf(term, from);
+    if (at < 0) return false;
+    if (at === 0 || !/[a-z0-9]/.test(text[at - 1])) return true;
+    from = at + 1;
+  }
+}
+
+function termsOf(query) {
+  const terms = [];
+  const re = /"([^"]+)"|(\S+)/g;
+  let m;
+  while ((m = re.exec(query.toLowerCase()))) {
+    if (m[1]) terms.push({ text: m[1], phrase: true });
+    else if (m[2]) terms.push({ text: m[2], phrase: false });
+  }
+  return terms;
+}
+
+function matchVerses(list, query) {
+  const terms = termsOf(query);
+  if (!terms.length) return [];
+  const out = [];
+  for (const verse of list) {
+    let ok = true;
+    for (const term of terms) {
+      if (term.phrase) {
+        if (!verse.lower.includes(term.text)) { ok = false; break; }
+      } else if (!wordStart(verse.lower, term.text)) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) {
+      out.push(verse);
+      if (out.length >= 60) break;
+    }
+  }
+  return out;
+}
+
+function snippet(verse, terms) {
+  const text = verse.text;
+  let at = -1;
+  for (const term of terms) {
+    at = verse.lower.indexOf(term.text);
+    if (at >= 0) break;
+  }
+  if (at < 0 || text.length <= 150) return text;
+  const from = Math.max(0, at - 45);
+  const to = Math.min(text.length, from + 150);
+  return (from > 0 ? '\u2026' : '') + text.slice(from, to).trim() + (to < text.length ? '\u2026' : '');
+}
+
+function openSearch() {
+  const body = sheet('Search', { tall: true });
+
+  const input = document.createElement('input');
+  input.type = 'search';
+  input.className = 'search-input';
+  input.placeholder = 'j3.15 \u00B7 John 3:15 \u00B7 or words from a verse';
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+
+  const info = document.createElement('p');
+  info.className = 'muted';
+  info.textContent = 'Type a reference, or words you remember. Quotes search a phrase.';
+
+  const results = document.createElement('div');
+  results.className = 'results';
+
+  body.append(input, info, results);
+
+  let timer = null;
+  let running = 0;
+
+  const showReference = (parsed) => {
+    results.replaceChildren();
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'result';
+    row.textContent = 'Go to ' + parsed.book.name + ' ' + parsed.chapter +
+      (parsed.verse ? ':' + parsed.verse : '');
+    row.addEventListener('click', () => {
+      closeSheet();
+      go(parsed.book, parsed.chapter, parsed.verse);
+    });
+    results.append(row);
+    info.textContent = 'Press Enter to go there.';
+  };
+
+  const run = async (value, enter) => {
+    const query = value.trim();
+    results.replaceChildren();
+    if (!query) {
+      info.textContent = 'Type a reference, or words you remember. Quotes search a phrase.';
+      return;
+    }
+
+    const parsed = parseReference(query);
+    if (parsed && (isReferenceOnly(query) || enter)) {
+      showReference(parsed);
+      if (enter) {
+        closeSheet();
+        go(parsed.book, parsed.chapter, parsed.verse);
+      }
+      return;
+    }
+
+    const ticket = ++running;
+    info.textContent = 'Indexing the whole Bible, once\u2026';
+    const list = await buildSearchIndex((done, total, name) => {
+      if (ticket === running) info.textContent = 'Indexing\u2026 ' + name + ' (' + done + '/' + total + ')';
+    });
+    if (ticket !== running) return;
+
+    const found = matchVerses(list, query);
+    info.textContent = found.length
+      ? found.length + (found.length === 60 ? '+' : '') + ' verses'
+      : 'No verse contains \u201C' + query + '\u201D';
+    if (!found.length) return;
+
+    const terms = termsOf(query);
+    for (const verse of found) {
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'result';
+      const ref = document.createElement('span');
+      ref.className = 'ref';
+      ref.textContent = verse.book.name + ' ' + verse.chapter + ':' + verse.verse;
+      const text = document.createElement('span');
+      text.className = 'snip';
+      text.textContent = snippet(verse, terms);
+      row.append(ref, text);
+      row.addEventListener('click', () => {
+        closeSheet();
+        go(verse.book, verse.chapter, verse.verse);
+      });
+      results.append(row);
+    }
+  };
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => run(input.value, false), 260);
+  });
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      clearTimeout(timer);
+      run(input.value, true);
+    }
+  });
+
+  setTimeout(() => input.focus(), 240);
+}
+
+/* ----------------------------------------------------------------- pickers */
 
 function openPicker() {
   const body = sheet('Choose a book', { tall: true });
@@ -956,13 +1352,21 @@ function openPicker() {
 
   const fill = (ot) => {
     list.replaceChildren();
-    for (const book of BOOKS.filter((b) => b.ot === ot)) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'book' + (book === state.book ? ' current' : '');
-      button.textContent = book.name;
-      button.addEventListener('click', () => openChapters(book));
-      list.append(button);
+    for (const [name, from, to, isOt] of GROUPS) {
+      if (isOt !== ot) continue;
+      const heading = document.createElement('h3');
+      heading.className = 'group';
+      heading.textContent = name;
+      list.append(heading);
+      for (let i = from; i <= to; i++) {
+        const book = BOOKS[i];
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'book' + (book === state.book ? ' current' : '');
+        button.textContent = book.name;
+        button.addEventListener('click', () => openChapters(book));
+        list.append(button);
+      }
     }
   };
 
@@ -1013,7 +1417,7 @@ function openSettings() {
   const size = document.createElement('input');
   size.type = 'range';
   size.min = '14';
-  size.max = '32';
+  size.max = '34';
   size.step = '1';
   size.value = String(prefs.size);
   const sizeOut = sizeLabel.querySelector('output');
@@ -1043,26 +1447,28 @@ function openSettings() {
     applyPrefs();
   });
 
-  const themeLabel = document.createElement('div');
-  themeLabel.className = 'row';
-  themeLabel.innerHTML = '<span>Background</span>';
-  const theme = document.createElement('select');
-  for (const [value, name] of [['default', 'Default'], ['paper', 'Paper'], ['sepia', 'Sepia'],
-                               ['grey', 'Grey'], ['night', 'Night']]) {
-    const option = document.createElement('option');
-    option.value = value;
-    option.textContent = name;
-    if (prefs.theme === value) option.selected = true;
-    theme.append(option);
+  const themeLabel = document.createElement('h3');
+  themeLabel.textContent = 'BACKGROUND';
+  const themeRow = document.createElement('div');
+  themeRow.className = 'theme-row';
+  for (const [value, name, colour] of THEMES) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'theme-dot' + (prefs.theme === value ? ' active' : '');
+    button.style.background = colour;
+    button.title = name;
+    button.setAttribute('aria-label', name);
+    button.addEventListener('click', () => {
+      prefs.theme = value;
+      writeJSON('kjv.prefs', prefs);
+      applyPrefs();
+      for (const dot of themeRow.children) dot.classList.remove('active');
+      button.classList.add('active');
+    });
+    themeRow.append(button);
   }
-  theme.addEventListener('change', () => {
-    prefs.theme = theme.value;
-    writeJSON('kjv.prefs', prefs);
-    applyPrefs();
-  });
-  themeLabel.append(theme);
 
-  body.append(sizeLabel, size, spacingLabel, spacing, themeLabel);
+  body.append(sizeLabel, size, spacingLabel, spacing, themeLabel, themeRow);
 
   for (const [name, field] of [['Serif', 'serif'],
                                ['Italic words (supplied by the translators)', 'italics'],
@@ -1083,16 +1489,48 @@ function openSettings() {
     body.append(row);
   }
 
+  const offlineLabel = document.createElement('h3');
+  offlineLabel.textContent = 'OFFLINE';
+  const offline = document.createElement('button');
+  offline.type = 'button';
+  offline.className = 'wide subtle';
+  offline.textContent = 'Download the whole Bible for offline';
+  offline.addEventListener('click', () => downloadAll(offline));
+  const offlineNote = document.createElement('p');
+  offlineNote.className = 'credit';
+  offlineNote.textContent = 'About 19 MB, once. After that the reader opens with no network at all.';
+
+  body.append(offlineLabel, offline, offlineNote);
+
   const footer = document.createElement('p');
   footer.className = 'credit';
   footer.textContent = 'KJV and Strong\u2019s: public domain. Webster\u2019s 1828: CC BY-SA 4.0. Cross-references are not in this build yet.';
   body.append(footer);
 }
 
+async function downloadAll(button) {
+  const files = [];
+  for (const book of BOOKS) files.push('book_' + book.ai, 'words_' + book.ai);
+  files.push('lexicon', 'webster', 'xrefs');
+
+  button.disabled = true;
+  for (let i = 0; i < files.length; i++) {
+    button.textContent = 'Downloading ' + (i + 1) + ' of ' + files.length + '\u2026';
+    try {
+      /* Straight to the cache: the service worker stores every data file it
+         serves, so this is what makes the app work with the network off. */
+      await fetch(DATA + files[i], { cache: 'reload' });
+    } catch (e) { /* keep going: one missing file should not stop the rest */ }
+  }
+  button.disabled = false;
+  button.textContent = 'Downloaded \u2014 the reader now works offline';
+}
+
 /* ------------------------------------------------------------- interaction */
 
 let press = null;
 let longPressed = false;
+let swipe = null;
 
 function clearPress() {
   if (press) clearTimeout(press.timer);
@@ -1103,6 +1541,7 @@ content.addEventListener('pointerdown', (event) => {
   const verseEl = event.target.closest('.verse');
   if (!verseEl) return;
   longPressed = false;
+  swipe = { x: event.clientX, y: event.clientY, done: false };
   const timer = setTimeout(() => {
     longPressed = true;
     lookupAt(event.clientX, event.clientY, verseEl);
@@ -1110,12 +1549,23 @@ content.addEventListener('pointerdown', (event) => {
   press = { timer, x: event.clientX, y: event.clientY };
 });
 
-content.addEventListener('pointerup', clearPress);
-content.addEventListener('pointercancel', clearPress);
+content.addEventListener('pointerup', (event) => {
+  clearPress();
+  if (!swipe || swipe.done) return;
+  const dx = event.clientX - swipe.x;
+  const dy = event.clientY - swipe.y;
+  /* A page turn: a long, flat drag. Anything steeper is a scroll. */
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.8) {
+    swipe.done = true;
+    step(dx < 0 ? 1 : -1);
+  }
+});
+
+content.addEventListener('pointercancel', () => { clearPress(); swipe = null; });
 content.addEventListener('pointermove', (event) => {
   if (!press) return;
   /* A thumb is never perfectly still; only a real drag counts as scrolling. */
-  if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10) clearPress();
+  if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 12) clearPress();
 });
 content.addEventListener('contextmenu', (event) => {
   if (event.target.closest('.verse')) event.preventDefault();
@@ -1162,7 +1612,9 @@ function offsetInVerse(verseEl, node, offset) {
 content.addEventListener('click', (event) => {
   const wasLong = longPressed;
   longPressed = false;
-  if (wasLong) return;
+  const turned = swipe && swipe.done;
+  swipe = null;
+  if (wasLong || turned) return;
 
   const verseEl = event.target.closest('.verse');
   if (!verseEl) return;
@@ -1179,16 +1631,21 @@ content.addEventListener('click', (event) => {
 
 document.getElementById('prev').addEventListener('click', () => step(-1));
 document.getElementById('next').addEventListener('click', () => step(1));
+document.getElementById('search').addEventListener('click', openSearch);
 where.addEventListener('click', openPicker);
 document.getElementById('menu').addEventListener('click', openSettings);
 
 document.addEventListener('keydown', (event) => {
   const tag = event.target.tagName;
-  if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
+  if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') {
+    if (event.key === 'Escape') event.target.blur();
+    return;
+  }
   if (event.key === 'Escape') { closeSheet(); return; }
   if (openSheet) return;
   if (event.key === 'ArrowLeft') step(-1);
   if (event.key === 'ArrowRight') step(1);
+  if (event.key === '/') { event.preventDefault(); openSearch(); }
 });
 
 function route() {
