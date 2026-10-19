@@ -7,12 +7,21 @@
  * the dictionary are cached the first time they are fetched, so the first read of
  * a book costs a fetch and every read after it does not.
  *
- * Bump VERSION whenever the shell changes, or returning readers keep the old
- * app.js: the shell is served cache-first.
+ * VERSION and the ?v= stamps in index.html are bumped together on every deploy:
+ * that is what stops a returning reader seeing the previous build out of the
+ * cache.
  */
 
-const VERSION = 'kjv-web-2';
-const SHELL = ['./', './index.html', './app.js', './style.css', './manifest.webmanifest', './icon.svg'];
+const VERSION = 'kjv-web-3';
+const STAMP = '3';
+const SHELL = [
+  './',
+  './index.html',
+  './app.js?v=' + STAMP,
+  './style.css?v=' + STAMP,
+  './manifest.webmanifest',
+  './icon.svg'
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
