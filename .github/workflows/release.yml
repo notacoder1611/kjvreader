@@ -39,11 +39,28 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-
-      - name: Install the SDK the build asks for
+      # The ubuntu-latest image already carries the Android SDK, so no setup
+      # action is used here: android-actions/setup-android tries to install the
+      # 'tools' package, which the SDK repository dropped years ago, and fails.
+      # This only adds the two pieces the build asks for if the image lacks them.
+      - name: Make sure SDK 34 is present
         run: |
-          yes | sdkmanager --install "platforms;android-34" "build-tools;34.0.0" > /dev/null || true
+          set -eu
+          if [ -z "${ANDROID_HOME:-}" ]; then
+            export ANDROID_HOME=/usr/local/lib/android/sdk
+            echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          fi
+          echo "Using $ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" || true
+          ls "$ANDROID_HOME/build-tools" || true
+          if [ ! -d "$ANDROID_HOME/platforms/android-34" ]; then
+            yes | sdkmanager --install "platforms;android-34" > /dev/null
+          fi
+          if [ ! -d "$ANDROID_HOME/build-tools/34.0.0" ]; then
+            yes | sdkmanager --install "build-tools;34.0.0" > /dev/null
+          fi
+          ls "$ANDROID_HOME/platforms"
+          ls "$ANDROID_HOME/build-tools"
 
       - uses: gradle/actions/setup-gradle@v4
 
@@ -64,7 +81,11 @@ jobs:
           VERSION: ${{ steps.version.outputs.name }}
         run: |
           set -euo pipefail
-          build_tools="$ANDROID_HOME/build-tools/34.0.0"
+          if [ -z "${ANDROID_HOME:-}" ]; then
+            export ANDROID_HOME=/usr/local/lib/android/sdk
+          fi
+          build_tools=$(ls -d "$ANDROID_HOME"/build-tools/34.0.0 "$ANDROID_HOME"/build-tools/3[0-9].* 2>/dev/null | sort -V | tail -n 1)
+          echo "Signing with $build_tools"
           unsigned=app/build/outputs/apk/release/app-release-unsigned.apk
           ls -l "$unsigned"
           mkdir -p dist
