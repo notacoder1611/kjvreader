@@ -7,6 +7,6 @@ all bundled in the APK. No network permission, no ads, no analytics.
 | | |
 |---|---|
 | Application ID | `com.realsneed.biblereader` |
-| Version | 0.25.5 (versionCode 39) |
+| Version | 0.25.6 (versionCode 40) |
 | SDK | `minSdk 21`, `compileSdk` / `targetSdk 34` |
 | Dependencies | `appcompat 1.7.0`, `recyclerview 1.3.2`, `viewpager2 1.1.0` |
