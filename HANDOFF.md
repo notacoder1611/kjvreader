@@ -6,8 +6,8 @@ from, what is verified, and what is still open.
 
 Two other documents carry the rest:
 
-* **`README.md`** - the chronological build log, 36 numbered steps: what was built
-  in what order, and the evidence behind each claim.
+* **`README.md`** - a concise overview: features, build, data, verification and
+  open work. The detailed step-by-step build log is kept privately by the owner.
 * **The Google Doc** - requirements and bugs as the owner tracks them. It is
   shared privately; ask the owner for access.
 
@@ -163,13 +163,14 @@ which API level it starts at and what happens below it.
 
 Removed, with reasons: **reading plans** and **bubble buttons** (`[SKIP]` in the
 doc), **thumb-reach navigation** (scrapped), and the **neural TTS engine**
-(Step 36 in the README: four attempts, never produced sound on the target phone;
-reading aloud now uses the device's own engine behind the same interface).
+(four attempts, never produced sound on the target phone; reading aloud now uses
+the device's own engine behind the same interface).
 
 ## 10. Conventions
 
-* Bump `versionCode` and `versionName` every iteration, and append a numbered
-  `**Step N - ...**` section to `README.md` with the evidence for the change.
+* Bump `versionCode` and `versionName` every iteration. Detailed per-iteration
+  notes and evidence go in the owner's private build log; `README.md` stays a
+  concise overview.
 * The sheet you get by tapping a verse is called the **Verse menu** everywhere -
   code, docs and conversation.
 * Two gestures are reserved: **tap a verse** = Verse menu, **hold a word** = that
