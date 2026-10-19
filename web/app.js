@@ -6,8 +6,8 @@
  * No framework, no build step, no backend: the page reads the very same assets
  * the Android app ships (../app/src/main/assets/usfm/kjv) and keeps everything
  * else in localStorage. The parsers below are ports of UsfmParser.kt and
- * StrongsRepository.kt, kept line for line where it matters, so a verse reads the
- * same in both.
+ * StrongsRepository.kt, kept close to the original where it matters, so a verse
+ * reads the same in both.
  */
 
 const DATA = new URL('../app/src/main/assets/usfm/kjv/', document.baseURI).href;
@@ -101,7 +101,7 @@ function writeJSON(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (e) {
-    /* private mode, quota: the reader still reads */
+    /* private mode or quota: reading still works, the note is simply not kept */
   }
 }
 
@@ -123,7 +123,9 @@ function isSpace(c) {
   return c === ' ' || c === '\n' || c === '\r' || c === '\t' || c === '\u00A0';
 }
 
-/* One verse, marker-free, with the supplied words and the margin notes kept. */
+/* One verse, marker-free, with the supplied words and the margin notes kept.
+   Port of UsfmParser.clean(): the offsets are measured as the text is built, so
+   they are offsets in the finished verse. */
 function cleanVerse(source) {
   const raw = source.replace(GLUED_SENTENCE, ' ');
   const italics = [];
@@ -186,7 +188,7 @@ function cleanVerse(source) {
   }
   closeItalic();
 
-  let text = out.replace(/\s+$/, '');
+  const text = out.replace(/\s+$/, '');
   for (const note of footnotes) {
     if (note.anchor > text.length) note.anchor = text.length;
   }
@@ -207,29 +209,12 @@ function readFootnote(body, anchor) {
 
 function parseVerses(content) {
   const re = /\\v\s+(\d+)\s?/g;
-  const marks = [];
-  let m;
-  while ((m = re.exec(content))) {
-    marks.push({ number: Number(m[1]), end: m.index + m[0].length });
-  }
-  const verses = [];
-  for (let i = 0; i < marks.length; i++) {
-    const from = marks[i].end;
-    const to = i + 1 < marks.length ? marks[i + 1].end - re.length : content.length;
-    const stop = i + 1 < marks.length ? content.length : content.length;
-    void to;
-    void stop;
-    const end = i + 1 < marks.length ? marks[i + 1].end - marks[i + 1].matchedTextLength : content.length;
-    void end;
-  }
-  /* The loop above is replaced below: the slice has to end where the next
-     match begins, so the match offsets are recorded instead of just ends. */
-  verses.length = 0;
   const found = [];
-  re.lastIndex = 0;
+  let m;
   while ((m = re.exec(content))) {
     found.push({ number: Number(m[1]), start: m.index, end: m.index + m[0].length });
   }
+  const verses = [];
   for (let i = 0; i < found.length; i++) {
     const from = found[i].end;
     const to = i + 1 < found.length ? found[i + 1].start : content.length;
@@ -288,8 +273,7 @@ function normalise(raw) {
 }
 
 function normaliseEntry(raw) {
-  const parts = raw.split(/[ \t]/).map(normalise).filter(Boolean);
-  return parts.join(' ');
+  return raw.split(/[ \t]/).map(normalise).filter(Boolean).join(' ');
 }
 
 function matchAt(normal, from, target) {
@@ -312,6 +296,8 @@ function matchesWithin(normal, from, target) {
   return false;
 }
 
+/* A word gets a number only when it matches an entry exactly, word for word -
+   never a plausible neighbour. Port of StrongsRepository.align(). */
 function alignVerse(text, entries) {
   const tokens = text.split(' ').filter(Boolean);
   if (!tokens.length || !entries.length) return [];
@@ -398,6 +384,7 @@ function wordAt(text, index) {
   return '';
 }
 
+/* `3:16` then, tab separated, `world<US>G2889<US>` per word. */
 function parseWords(text) {
   const map = new Map();
   for (const line of text.split('\n')) {
@@ -411,16 +398,15 @@ function parseWords(text) {
     const list = [];
     for (const chunk of line.slice(firstTab + 1).split('\t')) {
       const parts = chunk.split(UNIT);
-      const word = parts[0];
-      if (!word) continue;
-      list.push({ word, strongs: parts[1] || '' });
+      if (!parts[0]) continue;
+      list.push({ word: parts[0], strongs: parts[1] || '' });
     }
     if (list.length) map.set(chapter * 1000 + verse, list);
   }
   return map;
 }
 
-function lexiconEntry(id, tail) {
+function lexiconEntry(tail) {
   const first = tail.indexOf('\t');
   if (first < 0) return { original: tail, transliteration: '', definition: '', kjv: null };
   const second = tail.indexOf('\t', first + 1);
@@ -453,9 +439,9 @@ function websterKey(word) {
 
 /* -------------------------------------------------------------- data access */
 
-const rawCache = new Map();      /* url -> text */
-const bookCache = new Map();     /* asset index -> chapters */
-const wordsCache = new Map();    /* asset index -> Map */
+const rawCache = new Map();    /* url -> text */
+const bookCache = new Map();   /* asset index -> chapters */
+const wordsCache = new Map();  /* asset index -> Map */
 let lexicon = null;
 let webster = null;
 
@@ -463,7 +449,7 @@ async function fetchText(url) {
   const hit = rawCache.get(url);
   if (hit !== undefined) return hit;
   const response = await fetch(url);
-  if (!response.ok) throw new Error(url + ' - HTTP ' + response.status);
+  if (!response.ok) throw new Error(url + ' \u2014 HTTP ' + response.status);
   const text = await response.text();
   rawCache.set(url, text);
   return text;
@@ -471,8 +457,7 @@ async function fetchText(url) {
 
 async function loadBook(book) {
   if (bookCache.has(book.ai)) return bookCache.get(book.ai);
-  const text = await fetchText(DATA + 'book_' + book.ai);
-  const chapters = parseBook(text);
+  const chapters = parseBook(await fetchText(DATA + 'book_' + book.ai));
   bookCache.set(book.ai, chapters);
   if (bookCache.size > 3) bookCache.delete(bookCache.keys().next().value);
   return chapters;
@@ -553,6 +538,8 @@ function textFragment(verse) {
   if (prefs.footnotes) {
     verse.footnotes.forEach((note, index) => points.push({ at: note.anchor, kind: 'note', note, index }));
   }
+  /* A close sits before an open at the same offset, so "supplied" runs do not
+     swallow each other. */
   points.sort((a, b) => a.at - b.at || (a.kind === 'close' ? -1 : 1));
 
   let parent = fragment;
@@ -566,12 +553,11 @@ function textFragment(verse) {
   };
 
   for (const point of points) {
-    const at = Math.max(last, Math.min(point.at, verse.text.length));
-    emit(at);
+    emit(Math.max(last, Math.min(point.at, verse.text.length)));
     if (point.kind === 'open') {
       if (!italic) {
         italic = document.createElement('i');
-        parent.append(italic);
+        fragment.append(italic);
         parent = italic;
       }
     } else if (point.kind === 'close') {
@@ -609,7 +595,7 @@ function verseNode(verse) {
   return p;
 }
 
-async function render(pushHash) {
+async function render(pushHash, keepScroll) {
   say('');
   whereLabel.textContent = state.book.name + ' ' + state.chapter;
 
@@ -617,14 +603,16 @@ async function render(pushHash) {
   try {
     chapters = await loadBook(state.book);
   } catch (error) {
-    say('Could not load ' + state.book.name + '. ' + error.message +
-        ' — the page has to be served from the top of the repository (GitHub Pages: branch main, folder /).');
+    say('Could not load ' + state.book.name + ': ' + error.message +
+        ' \u2014 the page has to be served from the top of the repository.');
     return;
   }
   const chapter = chapters.find((c) => c.number === state.chapter);
   if (!chapter || !chapter.verses.length) {
-    content.replaceChildren(Object.assign(document.createElement('p'),
-      { className: 'empty', textContent: 'This chapter could not be read.' }));
+    const empty = document.createElement('p');
+    empty.className = 'empty';
+    empty.textContent = 'This chapter could not be read.';
+    content.replaceChildren(empty);
     return;
   }
 
@@ -641,12 +629,14 @@ async function render(pushHash) {
   }
 
   content.replaceChildren(...chapter.verses.map(verseNode));
-  window.scrollTo(0, 0);
+  if (!keepScroll) window.scrollTo(0, 0);
   if (pushHash) {
     const hash = '#/' + state.book.id + '/' + state.chapter;
     if (location.hash !== hash) history.pushState(null, '', hash);
   }
-  try { localStorage.setItem('kjv.last', state.book.id + '/' + state.chapter); } catch (e) { /* ignore */ }
+  try {
+    localStorage.setItem('kjv.last', state.book.id + '/' + state.chapter);
+  } catch (e) { /* ignore */ }
 }
 
 function step(delta) {
@@ -718,7 +708,7 @@ function sheet(title, options = {}) {
   return body;
 }
 
-/* ------------------------------------------------------------- word study */
+/* -------------------------------------------------------------- word study */
 
 async function wordStudy(verse, index) {
   const list = state.words.get(verse.number) || [];
@@ -728,6 +718,7 @@ async function wordStudy(verse, index) {
   const reference = state.book.name + ' ' + state.chapter + ':' + verse.number;
 
   const body = sheet(label || 'Word');
+
   const head = document.createElement('div');
   head.className = 'ws-head';
   const word = document.createElement('div');
@@ -746,9 +737,7 @@ async function wordStudy(verse, index) {
 
   let english = null;
   try {
-    const dictionary = await loadWebster();
-    const value = dictionary.get(websterKey(label));
-    if (value) english = value;
+    english = (await loadWebster()).get(websterKey(label)) || null;
   } catch (e) { /* no dictionary */ }
 
   let entry = null;
@@ -756,7 +745,7 @@ async function wordStudy(verse, index) {
     try {
       const map = await loadLexicon();
       const tail = map.get(id);
-      if (tail !== undefined) entry = lexiconEntry(id, tail);
+      if (tail !== undefined) entry = lexiconEntry(tail);
     } catch (e) { /* no lexicon */ }
   }
 
@@ -767,6 +756,7 @@ async function wordStudy(verse, index) {
     labelEl.textContent = "WEBSTER'S 1828";
     const text = document.createElement('p');
     text.className = 'entry';
+    text.style.whiteSpace = 'pre-line';
     text.textContent = label.toUpperCase() + ', ' + english;
     const credit = document.createElement('p');
     credit.className = 'credit';
@@ -782,6 +772,7 @@ async function wordStudy(verse, index) {
     body.append(labelEl, text);
     if (!english) {
       const none = document.createElement('p');
+      none.className = 'muted';
       none.textContent = 'Nothing is recorded for this word in either dictionary.';
       body.append(none);
     }
@@ -790,6 +781,7 @@ async function wordStudy(verse, index) {
 
   if (!entry) {
     const missing = document.createElement('p');
+    missing.className = 'muted';
     missing.textContent = 'No entry for this number in the lexicon.';
     body.append(missing);
     return;
@@ -820,15 +812,17 @@ async function wordStudy(verse, index) {
   }
 }
 
-/* ------------------------------------------------------------- verse menu */
+/* -------------------------------------------------------------- verse menu */
 
 function openVerseMenu(verse) {
   const reference = state.book.name + ' ' + state.chapter + ':' + verse.number;
   const key = keyOf(state.book, state.chapter, verse.number);
   const body = sheet(reference);
+  const redraw = () => { closeSheet(); render(false, true); };
 
   const swatches = document.createElement('div');
   swatches.className = 'swatches';
+
   const none = document.createElement('button');
   none.type = 'button';
   none.className = 'swatch none' + (highlights[key] ? '' : ' active');
@@ -836,10 +830,10 @@ function openVerseMenu(verse) {
   none.addEventListener('click', () => {
     delete highlights[key];
     writeJSON('kjv.highlights', highlights);
-    closeSheet();
-    render(false);
+    redraw();
   });
   swatches.append(none);
+
   for (const colour of HL_COLORS) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -848,8 +842,7 @@ function openVerseMenu(verse) {
     button.addEventListener('click', () => {
       highlights[key] = colour;
       writeJSON('kjv.highlights', highlights);
-      closeSheet();
-      render(false);
+      redraw();
     });
     swatches.append(button);
   }
@@ -862,6 +855,7 @@ function openVerseMenu(verse) {
   note.rows = 3;
   note.placeholder = 'Add a note\u2026';
   note.value = notes[key] || '';
+
   const save = document.createElement('button');
   save.type = 'button';
   save.className = 'wide';
@@ -871,8 +865,7 @@ function openVerseMenu(verse) {
     if (text) notes[key] = text;
     else delete notes[key];
     writeJSON('kjv.notes', notes);
-    closeSheet();
-    render(false);
+    redraw();
   });
   body.append(noteLabel, note, save);
 
@@ -884,8 +877,7 @@ function openVerseMenu(verse) {
     remove.addEventListener('click', () => {
       delete notes[key];
       writeJSON('kjv.notes', notes);
-      closeSheet();
-      render(false);
+      redraw();
     });
     body.append(remove);
   }
@@ -953,7 +945,7 @@ function openFootnotes(verse, index) {
   }
 }
 
-/* ------------------------------------------------------------ book picker */
+/* --------------------------------------------------------------- pickers */
 
 function openPicker() {
   const body = sheet('Choose a book', { tall: true });
@@ -987,6 +979,7 @@ function openPicker() {
     tabs.append(button);
   }
   tabs.firstChild.classList.add('active');
+
   body.append(tabs, list);
   fill(true);
 }
@@ -1009,12 +1002,12 @@ function openChapters(book) {
   body.append(grid);
 }
 
-/* --------------------------------------------------------------- settings */
+/* ---------------------------------------------------------------- settings */
 
 function openSettings() {
   const body = sheet('Reading settings');
 
-  const sizeLabel = document.createElement('label');
+  const sizeLabel = document.createElement('div');
   sizeLabel.className = 'row';
   sizeLabel.innerHTML = '<span>Text size</span><output></output>';
   const size = document.createElement('input');
@@ -1032,7 +1025,7 @@ function openSettings() {
     applyPrefs();
   });
 
-  const spacingLabel = document.createElement('label');
+  const spacingLabel = document.createElement('div');
   spacingLabel.className = 'row';
   spacingLabel.innerHTML = '<span>Line spacing</span><output></output>';
   const spacing = document.createElement('input');
@@ -1050,7 +1043,7 @@ function openSettings() {
     applyPrefs();
   });
 
-  const themeLabel = document.createElement('label');
+  const themeLabel = document.createElement('div');
   themeLabel.className = 'row';
   themeLabel.innerHTML = '<span>Background</span>';
   const theme = document.createElement('select');
@@ -1069,12 +1062,11 @@ function openSettings() {
   });
   themeLabel.append(theme);
 
-  const toggles = [
-    ['Serif', 'serif'],
-    ['Italic words (supplied by the translators)', 'italics'],
-    ['Footnotes', 'footnotes']
-  ];
-  const toggleRows = toggles.map(([name, field]) => {
+  body.append(sizeLabel, size, spacingLabel, spacing, themeLabel);
+
+  for (const [name, field] of [['Serif', 'serif'],
+                               ['Italic words (supplied by the translators)', 'italics'],
+                               ['Footnotes', 'footnotes']]) {
     const row = document.createElement('label');
     row.className = 'row toggle';
     const span = document.createElement('span');
@@ -1088,14 +1080,12 @@ function openSettings() {
       applyPrefs();
     });
     row.append(span, input);
-    return row;
-  });
-
-  body.append(sizeLabel, size, spacingLabel, spacing, themeLabel, ...toggleRows);
+    body.append(row);
+  }
 
   const footer = document.createElement('p');
   footer.className = 'credit';
-  footer.textContent = 'KJV and Strong\u2019s: public domain. Webster\u2019s 1828: CC BY-SA 4.0.';
+  footer.textContent = 'KJV and Strong\u2019s: public domain. Webster\u2019s 1828: CC BY-SA 4.0. Cross-references are not in this build yet.';
   body.append(footer);
 }
 
@@ -1105,7 +1095,7 @@ let press = null;
 let longPressed = false;
 
 function clearPress() {
-  if (press && press.timer) clearTimeout(press.timer);
+  if (press) clearTimeout(press.timer);
   press = null;
 }
 
@@ -1117,14 +1107,15 @@ content.addEventListener('pointerdown', (event) => {
     longPressed = true;
     lookupAt(event.clientX, event.clientY, verseEl);
   }, 450);
-  press = { timer };
+  press = { timer, x: event.clientX, y: event.clientY };
 });
 
 content.addEventListener('pointerup', clearPress);
 content.addEventListener('pointercancel', clearPress);
 content.addEventListener('pointermove', (event) => {
   if (!press) return;
-  clearPress();
+  /* A thumb is never perfectly still; only a real drag counts as scrolling. */
+  if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10) clearPress();
 });
 content.addEventListener('contextmenu', (event) => {
   if (event.target.closest('.verse')) event.preventDefault();
@@ -1144,15 +1135,17 @@ function lookupAt(x, y, verseEl) {
     if (position) { node = position.offsetNode; offset = position.offset; }
   }
   if (!node) return;
-  if (node.nodeType !== Node.ELEMENT_NODE && node.nodeType !== Node.TEXT_NODE) return;
 
   const total = offsetInVerse(verseEl, node, offset);
   const index = wordIndexAt(verse.text, total);
   if (index < 0) return;
-  window.getSelection()?.removeAllRanges();
+  const selection = window.getSelection();
+  if (selection) selection.removeAllRanges();
   wordStudy(verse, index);
 }
 
+/* Character offset of the caret in the verse's own text: the number and the
+   footnote daggers are not part of it, so they are skipped. */
 function offsetInVerse(verseEl, node, offset) {
   let total = 0;
   const walker = document.createTreeWalker(verseEl, NodeFilter.SHOW_TEXT);
@@ -1167,12 +1160,16 @@ function offsetInVerse(verseEl, node, offset) {
 }
 
 content.addEventListener('click', (event) => {
-  if (longPressed) { longPressed = false; return; }
-  const marker = event.target.closest('.fn');
+  const wasLong = longPressed;
+  longPressed = false;
+  if (wasLong) return;
+
   const verseEl = event.target.closest('.verse');
   if (!verseEl) return;
   const verse = state.verses.get(Number(verseEl.dataset.v));
   if (!verse) return;
+
+  const marker = event.target.closest('.fn');
   if (marker) {
     openFootnotes(verse, Number(marker.dataset.fn));
     return;
@@ -1186,6 +1183,8 @@ where.addEventListener('click', openPicker);
 document.getElementById('menu').addEventListener('click', openSettings);
 
 document.addEventListener('keydown', (event) => {
+  const tag = event.target.tagName;
+  if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
   if (event.key === 'Escape') { closeSheet(); return; }
   if (openSheet) return;
   if (event.key === 'ArrowLeft') step(-1);
@@ -1207,7 +1206,7 @@ window.addEventListener('popstate', () => {
   if (!route()) render(false);
 });
 
-/* ------------------------------------------------------------------- boot */
+/* -------------------------------------------------------------------- boot */
 
 applyPrefs();
 
