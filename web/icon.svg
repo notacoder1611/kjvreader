@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="KJV Reader">
+  <rect width="512" height="512" rx="112" fill="#8a5a1e"/>
+  <path fill="#fdf6e8" opacity="0.95" d="M256 136c-27-19-66-28-106-28-11 0-20 1-26 4v270c6-2 15-4 26-4 40 0 79 9 106 28 27-19 66-28 106-28 11 0 20 2 26 4V112c-6-3-15-4-26-4-40 0-79 9-106 28z"/>
+  <rect x="249" y="144" width="9" height="252" rx="4" fill="#8a5a1e" opacity="0.45"/>
+  <g stroke="#8a5a1e" stroke-width="9" stroke-linecap="round" opacity="0.32">
+    <path d="M156 196h72M156 238h72M156 280h72M156 322h64"/>
+    <path d="M288 196h72M288 238h72M288 280h72M288 322h64"/>
+  </g>
+</svg>
