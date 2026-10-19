@@ -1,0 +1,3 @@
+# Tells GitHub Pages to serve these files as they are.
+# Without it Jekyll copies 19 MB of Bible data through its own pipeline on every
+# deploy, for no benefit, and can fail on files it does not recognise.
