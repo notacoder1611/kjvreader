@@ -892,7 +892,7 @@ async function wordStudy(verse, index) {
   body.append(every);
 }
 
-/* The word a short Webster entry points at: "… of bring, … [See Bring.]" */
+/* The word a short Webster entry points at: "\u2026 of bring, \u2026 [See Bring.]" */
 function pointedWord(definition) {
   if (!definition || definition.length > 200) return null;
   const match = /(?:of|see)\s+([A-Za-z][A-Za-z'-]{2,})/i.exec(definition);
@@ -933,6 +933,26 @@ async function buildOccurrences(progress) {
   return map;
 }
 
+/* The opening words of a verse, for an occurrence row: enough to recognise the
+   line without turning the list into the chapter. Empty on failure, so the row
+   still works as a link. */
+async function verseOpening(book, chapter, verse, limit) {
+  try {
+    const chapters = await loadBook(book);
+    const found = chapters.find((c) => c.number === chapter);
+    const line = found && found.verses.find((v) => v.number === verse);
+    if (!line || !line.text) return '';
+    const text = line.text;
+    if (text.length <= limit) return text;
+    const cut = text.slice(0, limit);
+    const space = cut.lastIndexOf(' ');
+    const kept = space > limit * 0.6 ? cut.slice(0, space) : cut;
+    return kept.replace(/[\s,.;:]+$/, '') + '\u2026';
+  } catch (e) {
+    return '';
+  }
+}
+
 async function openOccurrences(id, label) {
   const body = sheet(label + ' \u00B7 ' + id);
   const progress = document.createElement('p');
@@ -967,6 +987,7 @@ async function openOccurrences(id, label) {
   const list = document.createElement('div');
   list.className = 'results';
 
+  const rows = [];
   for (const packed of refs) {
     const book = BOOKS[Math.floor(packed / 1000000)];
     const chapter = Math.floor((packed % 1000000) / 1000);
@@ -974,15 +995,47 @@ async function openOccurrences(id, label) {
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'result';
-    row.textContent = book.name + ' ' + chapter + ':' + verse;
+    const ref = document.createElement('span');
+    ref.className = 'ref';
+    ref.textContent = book.name + ' ' + chapter + ':' + verse;
+    const opening = document.createElement('span');
+    opening.className = 'snip';
+    row.append(ref, opening);
     row.addEventListener('click', () => {
       closeSheet();
       go(book, chapter, verse);
     });
     list.append(row);
+    rows.push({ book, chapter, verse, opening });
   }
 
   body.append(head, list);
+
+  /* The rows work as links the moment they appear. The verse text follows them
+     one book at a time, in list order, so the same book is read once rather
+     than once per row. */
+  (async () => {
+    for (const item of rows) {
+      const text = await verseOpening(item.book, item.chapter, item.verse, 90);
+      if (text) item.opening.textContent = text;
+    }
+  })();
+}
+
+/* Build the occurrence index after the first chapter is on screen, so the first
+   "every occurrence" is instant. It reads about 5 MB of words files, once, and
+   the service worker keeps them \u2014 so it waits a few seconds, keeps quiet on a
+   metered connection, and shows no progress: nothing is waiting on it. */
+let preloadStarted = false;
+
+function preloadOccurrences() {
+  if (preloadStarted || occurrenceMap) return;
+  if (navigator.onLine === false) return;
+  if (navigator.connection && navigator.connection.saveData) return;
+  preloadStarted = true;
+  setTimeout(() => {
+    buildOccurrences().catch(() => { /* the button still builds it on demand */ });
+  }, 6000);
 }
 
 /* -------------------------------------------------------------- verse menu */
@@ -1055,34 +1108,48 @@ function openVerseMenu(verse) {
     body.append(remove);
   }
 
-  const copyVerse = document.createElement('button');
-  copyVerse.type = 'button';
-  copyVerse.className = 'wide';
-  copyVerse.textContent = 'Copy verse and reference';
-  copyVerse.addEventListener('click', () => {
+  /* One copy button, two lengths: a tap takes the verse with its reference, a
+     press takes the reference alone. Three buttons for three cases was clutter. */
+  const copyButton = document.createElement('button');
+  copyButton.type = 'button';
+  copyButton.className = 'wide';
+  copyButton.textContent = 'Copy verse';
+
+  let copyTimer = null;
+  let copiedReference = false;
+  const stopCopy = () => {
+    if (copyTimer) clearTimeout(copyTimer);
+    copyTimer = null;
+  };
+
+  copyButton.addEventListener('pointerdown', () => {
+    stopCopy();
+    copiedReference = false;
+    copyTimer = setTimeout(() => {
+      copyTimer = null;
+      copiedReference = true;
+      copy(reference);
+    }, 500);
+  });
+  copyButton.addEventListener('pointerup', stopCopy);
+  copyButton.addEventListener('pointercancel', stopCopy);
+  copyButton.addEventListener('pointerleave', stopCopy);
+  copyButton.addEventListener('click', () => {
+    stopCopy();
+    if (copiedReference) {
+      copiedReference = false;
+      closeSheet();
+      return;
+    }
     copy(verse.text + '\n' + reference + ' (KJV)');
     closeSheet();
   });
 
-  const copyText = document.createElement('button');
-  copyText.type = 'button';
-  copyText.className = 'wide subtle';
-  copyText.textContent = 'Copy verse only';
-  copyText.addEventListener('click', () => {
-    copy(verse.text);
-    closeSheet();
-  });
+  const copyHint = document.createElement('p');
+  copyHint.className = 'credit';
+  copyHint.textContent = 'Tap for the verse and reference \u00B7 hold for the reference alone';
 
-  const copyReference = document.createElement('button');
-  copyReference.type = 'button';
-  copyReference.className = 'wide subtle';
-  copyReference.textContent = 'Copy reference only';
-  copyReference.addEventListener('click', () => {
-    copy(reference);
-    closeSheet();
-  });
-
-  body.append(copyVerse, copyText, copyReference);
+  body.append(copyButton, copyHint);
 }
 
 function copy(text) {
@@ -1541,7 +1608,11 @@ content.addEventListener('pointerdown', (event) => {
   const verseEl = event.target.closest('.verse');
   if (!verseEl) return;
   longPressed = false;
-  swipe = { x: event.clientX, y: event.clientY, done: false };
+  swipe = { x: event.clientX, y: event.clientY, done: false, el: verseEl };
+  /* Keep every later event of this touch on the verse it started on. Without
+     the capture, a drag that leaves the verse sends its pointerup elsewhere and
+     the page never turns. */
+  try { verseEl.setPointerCapture?.(event.pointerId); } catch (e) { /* older browsers */ }
   const timer = setTimeout(() => {
     longPressed = true;
     lookupAt(event.clientX, event.clientY, verseEl);
@@ -1551,12 +1622,17 @@ content.addEventListener('pointerdown', (event) => {
 
 content.addEventListener('pointerup', (event) => {
   clearPress();
-  if (!swipe || swipe.done) return;
-  const dx = event.clientX - swipe.x;
-  const dy = event.clientY - swipe.y;
-  /* A page turn: a long, flat drag. Anything steeper is a scroll. */
-  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.8) {
-    swipe.done = true;
+  if (!swipe) return;
+  const drag = swipe;
+  try { drag.el.releasePointerCapture?.(event.pointerId); } catch (e) { /* older browsers */ }
+  const dx = event.clientX - drag.x;
+  const dy = event.clientY - drag.y;
+  /* A page turn: a long, flat drag. Anything steeper is a scroll. The decision
+     is taken from the drag itself, never from the press timer, because a thumb
+     that drifts has already cancelled the press by here. */
+  if (!drag.done && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.8) {
+    drag.done = true;
+    longPressed = false;
     step(dx < 0 ? 1 : -1);
   }
 });
@@ -1685,7 +1761,7 @@ const start = (() => {
 
 state.book = start.book;
 state.chapter = start.chapter;
-render(true);
+render(true).then(preloadOccurrences);
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => {

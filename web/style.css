@@ -138,6 +138,8 @@ body {
   padding: 22px 20px 10px;
 }
 
+/* pan-y keeps vertical scrolling with the browser and leaves horizontal drags
+   to the reader, which is what turns the page. */
 .verse {
   margin: 0 0 0.85em;
   border-radius: 8px;
@@ -145,6 +147,7 @@ body {
   padding: 0.1em 0.25em;
   margin-left: -0.25em;
   margin-right: -0.25em;
+  touch-action: pan-y;
   -webkit-tap-highlight-color: transparent;
   transition: background-color 900ms ease;
 }
@@ -479,6 +482,7 @@ button.wide[disabled] { opacity: 0.6; }
 
 .result .ref { font-weight: 700; font-size: 0.85rem; color: var(--accent); }
 .result .snip { font-size: 0.86rem; line-height: 1.45; color: var(--text); }
+.result .snip:empty { display: none; }
 .result .snip::before { content: "\201C"; }
 .result .snip::after { content: "\201D"; }
 
