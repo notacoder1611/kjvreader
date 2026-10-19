@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KJV Reader</string>
+
+    <string name="previous_chapter">Previous chapter</string>
+    <string name="next_chapter">Next chapter</string>
+    <string name="choose_book">Choose a book</string>
+    <string name="chapter_title">%1$s %2$d</string>
+    <string name="reference_title">%1$s %2$d:%3$d</string>
+    <string name="go">Go</string>
+    <string name="back">Back</string>
+    <string name="search">Search reference</string>
+    <string name="search_hint">Reference: j1:1 or John 1:1</string>
+    <string name="search_no_match">Book not recognised</string>
+    <string name="no_more_chapters">No further chapters</string>
+
+    <!-- Old Testament sections -->
+    <string name="group_pentateuch">PENTATEUCH</string>
+    <string name="group_history">HISTORY</string>
+    <string name="group_poetry">POETRY &amp; WISDOM</string>
+    <string name="group_major_prophets">MAJOR PROPHETS</string>
+    <string name="group_minor_prophets">MINOR PROPHETS</string>
+
+    <!-- New Testament sections -->
+    <string name="group_gospels">GOSPELS</string>
+    <string name="group_apostolic_history">APOSTOLIC HISTORY</string>
+    <string name="group_pauline">PAULINE EPISTLES</string>
+    <string name="group_general">GENERAL EPISTLES</string>
+    <string name="group_apocalyptic">APOCALYPTIC</string>
+    <string name="done">Done</string>
+    <string name="note_hint">Add a note…</string>
+    <string name="highlight_none">—</string>
+    <string name="cd_color_yellow">Yellow highlight</string>
+    <string name="cd_color_green">Green highlight</string>
+    <string name="cd_color_blue">Blue highlight</string>
+    <string name="cd_color_red">Red highlight</string>
+    <string name="cd_color_none">Remove highlight</string>
+    <string name="notes_and_highlights">Notes &amp; highlights</string>
+    <string name="no_marks">No notes or highlights yet.
+
+Tap a verse in the reader and add a colour or a note, and it will show up here.</string>
+    <string name="more_options">More options</string>
+    <string name="folders">Folders</string>
+    <string name="new_folder">New folder</string>
+    <string name="folder_name">Folder name</string>
+    <string name="new_subfolder">New sub-folder here</string>
+    <string name="rename_folder">Rename folder</string>
+    <string name="delete_folder">Delete folder</string>
+    <string name="delete_folder_confirm">Delete “%1$s”, everything nested inside it, and the verses filed there?</string>
+    <string name="save_to_folder">Save to folder</string>
+    <string name="save_to_folder_hint">Not saved in a folder yet</string>
+    <string name="in_folders">Saved in: %1$s</string>
+    <string name="verses_heading">VERSES</string>
+    <string name="no_folders">No folders yet.
+
+Tap + to create your first topic, then nest folders inside it as deep as you like.</string>
+    <string name="empty_folder">Nothing here yet.
+
+Use + for a sub-folder, or tap a verse in the reader and choose “Save to folder”.</string>
+    <string name="remove_from_folder">Remove from this folder</string>
+    <string name="create">Create</string>
+    <string name="rename">Rename</string>
+    <string name="delete">Delete</string>
+    <string name="folder_summary">%1$d subfolders · %2$d verses</string>
+    <string name="folder_summary_flat">%1$d verses</string>
+    <string name="read_aloud">Read aloud</string>
+    <string name="history">History</string>
+    <string name="history_clear">Clear</string>
+    <string name="no_history">Nothing here yet.\n\nChapters you turn to and verses you jump to will appear here, so you can always find your way back.</string>
+    <string name="history_cleared">History cleared</string>
+    <string name="history_remove">Remove from history</string>
+    <string name="history_chapter">%1$s %2$d</string>
+    <string name="history_verse">%1$s %2$d:%3$d</string>
+
+    <!-- Backing the reader's own data up to a file, and restoring it. -->
+    <string name="backup_menu">Backup Notes and Folders</string>
+    <string name="backup_action">Back up…</string>
+    <string name="import_action">Import…</string>
+    <string name="backup_name">bible-backup-%1$s.json</string>
+    <string name="backup_done">Backed up %1$d highlights, %2$d notes and %3$d folders</string>
+    <string name="backup_nothing">Nothing to back up yet</string>
+    <string name="backup_failed">Couldn\'t write the backup</string>
+    <string name="restore_title">Restore from this backup?</string>
+    <string name="restore_summary">It holds %1$d highlights, %2$d notes, %3$d folders and %4$d history entries.</string>
+    <string name="restore_merge">Merge</string>
+    <string name="restore_replace">Replace</string>
+    <string name="restore_merge_hint">Merge keeps what is on this phone and adds what is missing.</string>
+    <string name="restore_replace_hint">Replace deletes what is on this phone first.</string>
+    <string name="restore_done">Restored %1$d highlights, %2$d notes and %3$d folders</string>
+    <string name="restore_nothing">That backup is empty</string>
+    <string name="restore_failed">Couldn\'t read that file</string>
+    <string name="start_reading">Start reading</string>
+    <string name="pause_reading">Pause reading</string>
+    <string name="stop_reading">Stop reading</string>
+    <string name="reading_channel">Bible reading</string>
+    <string name="reading_voice">Reading voice</string>
+    <string name="voice_all">All</string>
+    <string name="voice_male">Male</string>
+    <string name="voice_female">Female</string>
+    <string name="voice_needs_network">more natural · needs internet</string>
+    <string name="voice_on_device">on device</string>
+    <string name="voice_sample">In the beginning God created the heaven and the earth.</string>
+    <string name="voice_test">Preview this voice</string>
+    <string name="voice_none">This engine reported no English voices.</string>
+    <string name="voice_engine">Engine: %1$s</string>
+    <string name="voice_engine_default">System default</string>
+    <string name="voice_change_engine">Choose engine</string>    <string name="notes_heading">NOTES</string>
+    <string name="no_notes_yet">No notes on this verse yet.</string>
+    <string name="add_note">Add note</string>
+    <string name="delete_note">Delete note</string>
+    <string name="remove_highlight">Remove highlight</string>
+    <string name="follow_reading">Tap to follow the reading again</string>    <string name="copy_verse">Copy verse</string>
+    <string name="copy_reference">Copy reference</string>
+    <string name="copy_hint">Tap to copy the verse and reference · hold to copy just the reference</string>
+    <string name="copied_verse">Copied verse and reference</string>
+    <string name="copied_reference">Copied %1$s</string>
+    <string name="reference_full">%1$s %2$d:%3$d (KJV)</string>    <string name="reading_settings">Reading settings</string>
+    <string name="text_size">Text size</string>
+    <string name="line_spacing">Line spacing</string>
+    <string name="font">Font</string>
+    <string name="font_sans">Sans</string>
+    <string name="font_serif">Serif</string>
+    <string name="reading_background">Background</string>
+    <string name="text_size_value">%1$d sp</string>
+    <string name="line_spacing_value">×%1$s</string>
+    <string name="theme_default">Default</string>
+    <string name="theme_paper">Paper</string>
+    <string name="theme_sepia">Sepia</string>
+    <string name="theme_grey">Grey</string>
+    <string name="theme_night">Night</string>
+    <string name="reading_preview_two">16   And God made two great lights; the greater light to rule the day, and the lesser light to rule the night: he made the stars also.</string>
+    <string name="reading_preview_three">3   The voice of one crying in the wilderness, Prepare ye the way of the Lord, make his paths straight.</string>
+    <string name="printer_marks">KJV PRINTER\'S MARKS</string>
+    <string name="italics_label">Italic words (supplied by the translators)</string>
+    <string name="footnotes_label">Footnotes</string>
+    <string name="quotations_label">Quotations underlined</string>
+    <string name="open_reference">Open</string>
+    <string name="quotations_heading">QUOTATIONS</string>
+    <string name="quotation_phrase">“%1$s”</string>
+    <string name="quotations_label_count">Quotations underlined  ·  %1$d marked</string>
+
+    <!-- The daily reading reminder. -->
+    <string name="reminder_setting">Read reminder</string>
+    <string name="reminder_open">Read reminder ›</string>
+    <string name="reminder_hint">A nudge once a day, at a time you choose. It stays quiet once you have read for ten minutes.</string>
+    <string name="search_words">Search words</string>
+    <string name="search_hint_field">Words from a verse</string>
+    <string name="search_clear">Clear</string>
+    <string name="search_building">Indexing the whole Bible, once…</string>
+    <string name="search_words_hint">Type any words you remember from a verse. Start of a word is enough, and a misspelling is forgiven. Put words in quotes to search for a phrase.</string>
+    <string name="search_none">No verse contains “%1$s”. Try fewer words.</string>
+    <string name="search_reference">%1$s %2$d:%3$d</string>
+    <string name="reminder_time">Time  %1$s</string>
+    <string name="reminder_time_off">Set a time to turn the reminder on</string>
+    <string name="reminder_set">Reminder set for %1$s</string>
+    <string name="reminder_channel">Reading reminders</string>
+    <string name="reminder_channel_description">A daily nudge to read, skipped when you already have.</string>
+    <string name="reminder_title">Time to read</string>
+    <string name="reminder_text">Open where you left off.</string>
+    <string name="reminder_notifications_denied">Notifications are blocked for this app, so the reminder cannot appear.</string>
+
+    <string name="shown">Shown</string>
+    <string name="hidden">Hidden</string>
+    <string name="footnotes_heading">FOOTNOTES</string>
+    <string name="no_footnotes">No footnotes on this verse.</string>
+    <string name="reading_preview">16   For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.  †</string>    <string name="verse_menu">Verse menu</string>
+    <string name="clear_selection">Clear selection</string>
+    <string name="reference_span">%1$s %2$s (KJV)</string>
+    <string name="select_verses">Select verses</string>
+    <string name="selection_hint">Tap verses to add them to the block</string>
+
+    <!-- Word study -->
+    <string name="word_study">Word study</string>
+    <string name="word_study_reference">%1$s %2$s</string>
+    <string name="word_study_empty">No Hebrew or Greek words are recorded for this verse.</string>
+    <string name="strongs_number">STRONG\'S %1$s</string>
+    <string name="strongs_hebrew">HEBREW \u00B7 %1$s</string>
+    <string name="strongs_greek">GREEK \u00B7 %1$s</string>
+    <string name="strongs_kjv">KJV:</string>
+    <string name="strongs_context">%1$s \u00B7 \u201C%2$s\u201D</string>
+    <string name="strongs_missing">No entry for this number in the lexicon.</string>
+    <string name="strongs_none">NO HEBREW OR GREEK</string>
+    <string name="strongs_none_body">This word has no Hebrew or Greek behind it. The KJV translators supplied it - the words printed in italics were added to carry the English sentence.</string>
+    <string name="strongs_verse_words">See every word in this verse \u2192</string>
+
+    <!-- Webster's 1828 (CC BY-SA 4.0) -->
+    <string name="webster_heading">WEBSTER\'S 1828</string>
+    <string name="webster_credit">Webster\'s 1828 American Dictionary of the English Language · CC BY-SA 4.0</string>
+    <string name="definition_none">Nothing is recorded for this word in either dictionary.</string>
+    <string name="concordance">Concordance</string>
+    <string name="concordance_open">Every occurrence \u2192</string>
+    <string name="concordance_building">Counting occurrences\u2026</string>
+
+    <plurals name="concordance_count">
+        <item quantity="one">%1$d verse</item>
+        <item quantity="other">%1$d verses</item>
+    </plurals>
+    <string name="cd_word_study">Look up the original word</string>
+    <string name="cd_select_verses">Select several verses</string>
+
+    <plurals name="selection_count">
+        <item quantity="one">%1$d verse</item>
+        <item quantity="other">%1$d verses</item>
+    </plurals>
+</resources>

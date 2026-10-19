@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#37474F</color>
+    <color name="primary_dark">#263238</color>
+    <color name="accent">#5C6BC0</color>
+    <color name="window_bg">#FFFDF7</color>
+    <color name="text_primary">#1A1A1A</color>
+    <color name="text_secondary">#6D6D6D</color>
+    <color name="verse_number">#A1887F</color>
+    <color name="section_title">#8E3B4E</color>
+    <color name="chip_bg">#E3E3E3</color>
+    <color name="sheet_bg">#FFFFFF</color>
+    <color name="sheet_separator">#22000000</color>
+    <color name="active_verse">#1F5C6BC0</color>
+    <color name="jump_flash">#3D5C6BC0</color>
+    <color name="verse_selection">#525C6BC0</color>
+    <color name="nav_bubble">#FFFFFF</color>
+    <!-- The underline under words an author is quoting: distinct from the
+         indigo accent and from every highlight colour. -->
+    <color name="quotation_underline">#8E24AA</color>
+</resources>

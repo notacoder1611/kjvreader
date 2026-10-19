@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:attr/selectableItemBackground"
+    android:orientation="vertical"
+    android:paddingLeft="20dp"
+    android:paddingTop="6dp"
+    android:paddingRight="20dp"
+    android:paddingBottom="6dp">
+
+    <TextView
+        android:id="@+id/quotationRef"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/section_title"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/quotationPhrase"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp" />
+</LinearLayout>

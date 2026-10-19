@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#263238</color>
+    <color name="primary_dark">#1A2327</color>
+    <color name="accent">#9FA8DA</color>
+    <color name="window_bg">#121212</color>
+    <color name="text_primary">#E4E4E4</color>
+    <color name="text_secondary">#9E9E9E</color>
+    <color name="verse_number">#BCAAA4</color>
+    <color name="section_title">#D08D9A</color>
+    <color name="chip_bg">#2C2C2C</color>
+    <color name="sheet_bg">#1E1E1E</color>
+    <color name="sheet_separator">#33FFFFFF</color>
+    <color name="active_verse">#339FA8DA</color>
+    <color name="jump_flash">#4D9FA8DA</color>
+    <color name="verse_selection">#669FA8DA</color>
+    <color name="nav_bubble">#2C2C2C</color>
+    <color name="quotation_underline">#CE93D8</color>
+</resources>

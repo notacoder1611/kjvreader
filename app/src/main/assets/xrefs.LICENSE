@@ -1,0 +1,11 @@
+Cross-reference data in this file and in assets/xrefs comes from openbible.info
+(https://www.openbible.info/labs/cross-references/), which is licensed under the
+Creative Commons Attribution 4.0 licence (CC BY 4.0).
+
+The app uses it only as a starting point: the quotations that ship in assets/xrefs
+are the subset of those references whose two verses share a contiguous run of
+distinctive words, which is how a thematic cross-reference is told apart from a
+quotation. That filtering, and the direction rule (the underline is only ever put
+on the later book), are this project's own work.
+
+The verse text itself is the KJV, which is public domain in most of the world.

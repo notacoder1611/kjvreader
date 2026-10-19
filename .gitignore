@@ -1,0 +1,23 @@
+# Build output
+/build/
+/app/build/
+
+# Gradle
+.gradle/
+
+# Local machine paths
+local.properties
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# Python bytecode from tools/
+__pycache__/
+*.pyc
+
+# Packaged apps (released separately)
+*.apk
+*.aab
+*.idsig

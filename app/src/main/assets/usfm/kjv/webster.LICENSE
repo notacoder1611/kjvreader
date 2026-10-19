@@ -1,0 +1,8 @@
+Definitions in `webster` come from Webster's 1828 American Dictionary of
+the English Language (public domain), transcribed by akaitsurugi and
+published under CC BY-SA 4.0:
+https://github.com/akaitsurugi/webster1828
+
+`webster` is a reduced, plain-text subset of that transcription: only the
+words the KJV itself uses, resolved by tools/build_webster.py. The subset
+stays under CC BY-SA 4.0.
