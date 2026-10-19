@@ -26,6 +26,10 @@ import java.util.concurrent.Executor
  * do not have. The card then says so and points at the verse's words, rather
  * than opening something else entirely.
  *
+ * The header is the only place the word and its verse appear: the card used to
+ * repeat the pair in a line under the concordance, which said nothing the
+ * header had not already said.
+ *
  * [strongs.warmUp] is called as the sheet opens, so the 1.4 MB lexicon is read on
  * the background thread while the sheet is still arriving rather than when a
  * word is tapped.
@@ -72,7 +76,6 @@ class StrongsSheet(
         val definition = dialog.findViewById<TextView>(R.id.strongsDefinition)
         val kjvLabel = dialog.findViewById<TextView>(R.id.strongsKjvLabel)
         val kjv = dialog.findViewById<TextView>(R.id.strongsKjv)
-        val contextView = dialog.findViewById<TextView>(R.id.strongsContext)
 
         // Something is shown immediately, then filled in - both lookup tables are
         // quick to read, but this keeps the card from ever appearing empty.
@@ -80,7 +83,6 @@ class StrongsSheet(
         transliteration.text = ""
         kjvLabel.visibility = View.GONE
         kjv.visibility = View.GONE
-        contextView.text = context.getString(R.string.strongs_context, reference, label)
         // Hidden until there is something to say - the index may still be building.
         val concordanceSection = listOf(concordanceLabel, concordanceRow, concordanceDivider)
         concordanceSection.forEach { it.visibility = View.GONE }
