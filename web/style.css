@@ -77,8 +77,9 @@ body {
 }
 
 /* The bar reads as a page header, not chrome: same paper, one hairline. The
-   title is sized off the reading size, so it grows with the text instead of
-   looking lost beside it. */
+   title is sized off the reading size but capped low, so it reads as a
+   running head rather than a headline - it grows with the text only until the
+   point where it would start to shout. */
 .bar {
   position: sticky;
   top: 0;
@@ -117,9 +118,9 @@ body {
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: clamp(16px, calc(var(--reading-size) * 0.92), 30px);
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-size: clamp(16px, calc(var(--reading-size) * 0.8), 22px);
+  font-weight: 600;
+  letter-spacing: 0.005em;
   padding: 10px 6px;
   border-radius: 10px;
   cursor: pointer;
@@ -139,7 +140,9 @@ body {
 }
 
 /* pan-y keeps vertical scrolling with the browser and leaves horizontal drags
-   to the reader, which is what turns the page. */
+   to the reader, which is what turns the page. Selection is off on purpose:
+   the phone's own copy menu takes the long press that belongs to the word
+   lookup, and copy has a button of its own. */
 .verse {
   margin: 0 0 0.85em;
   border-radius: 8px;
@@ -148,6 +151,9 @@ body {
   margin-left: -0.25em;
   margin-right: -0.25em;
   touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
   transition: background-color 900ms ease;
 }
@@ -186,6 +192,24 @@ body.no-footnotes sup.fn { display: none; }
 .hl-red { background: var(--hl-red); }
 
 .empty { color: var(--muted); text-align: center; margin-top: 4rem; }
+
+/* A turn should look like a turn: one short lurch in the direction of travel. */
+@keyframes turn-next {
+  from { opacity: 0; transform: translateX(22px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes turn-prev {
+  from { opacity: 0; transform: translateX(-22px); }
+  to { opacity: 1; transform: none; }
+}
+
+.page.turn-next { animation: turn-next 160ms ease-out; }
+.page.turn-prev { animation: turn-prev 160ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page.turn-next, .page.turn-prev { animation: none; }
+}
 
 .status {
   position: fixed;
@@ -252,6 +276,26 @@ body.no-footnotes sup.fn { display: none; }
   font-weight: 700;
   letter-spacing: 0.01em;
 }
+
+/* The header's tools sit together on the right: an optional action, then Done. */
+.sheet-tools { display: flex; align-items: center; gap: 2px; flex: none; }
+
+.icon-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icon-btn:active { background: var(--line); }
 
 .sheet-body {
   overflow-y: auto;
@@ -374,7 +418,7 @@ button.wide[disabled] { opacity: 0.6; }
 
 /* -------------------------------------------------------------- pickers */
 
-.tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+.tabs { display: flex; gap: 8px; margin-bottom: 4px; }
 
 .tab {
   appearance: none;
@@ -398,12 +442,20 @@ button.wide[disabled] { opacity: 0.6; }
 
 .book-list { display: flex; flex-direction: column; }
 
-.group {
-  margin: 18px 0 4px;
-  font-size: 0.68rem;
-  letter-spacing: 0.09em;
+/* A group heading is a divider, not a title: it sits in the same 4px gutter as
+   the book names it introduces, and every one of them looks the same - the
+   first used to lose its top margin and sit on the tabs. */
+.book-list .group {
+  margin: 24px 0 0;
+  padding: 0 4px 7px;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  font-weight: 700;
   color: var(--muted);
+  border-bottom: 1px solid var(--line);
 }
+
+.book-list .group:first-child { margin-top: 10px; }
 
 .book {
   appearance: none;

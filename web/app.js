@@ -554,7 +554,7 @@ const where = document.getElementById('where');
 const whereLabel = document.getElementById('bookChapter');
 const status = document.getElementById('status');
 
-const state = { book: BOOKS[0], chapter: 1, verses: new Map(), words: new Map() };
+const state = { book: BOOKS[0], chapter: 1, verses: new Map(), words: new Map(), turn: null };
 
 function say(message) {
   status.hidden = !message;
@@ -640,6 +640,26 @@ function verseNode(verse) {
   return p;
 }
 
+/* The word-to-number alignment for one chapter, done off the render path: the
+   chapter is painted first and aligned second, which is what stops a page turn
+   hesitating. A hold waits for it (see wordStudy). */
+let alignTask = null;
+
+async function alignChapter(book, chapter) {
+  let raw = new Map();
+  try {
+    raw = await loadWords(book);
+  } catch (e) {
+    return; /* no word data: reading still works */
+  }
+  const words = new Map();
+  for (const verse of chapter.verses) {
+    const entries = raw.get(chapter.number * 1000 + verse.number);
+    if (entries) words.set(verse.number, alignVerse(verse.text, entries));
+  }
+  if (state.book === book && state.chapter === chapter.number) state.words = words;
+}
+
 async function render(pushHash, keepScroll) {
   say('');
   whereLabel.textContent = state.book.name + ' ' + state.chapter;
@@ -662,18 +682,20 @@ async function render(pushHash, keepScroll) {
   }
 
   state.verses = new Map(chapter.verses.map((v) => [v.number, v]));
-
-  let raw = new Map();
-  try {
-    raw = await loadWords(state.book);
-  } catch (e) { /* no word data */ }
   state.words = new Map();
-  for (const verse of chapter.verses) {
-    const entries = raw.get(state.chapter * 1000 + verse.number);
-    if (entries) state.words.set(verse.number, alignVerse(verse.text, entries));
-  }
 
   content.replaceChildren(...chapter.verses.map(verseNode));
+
+  /* A turn should look like a turn: one short lurch in the direction of
+     travel. Removing the class first is what lets the same turn repeat. */
+  if (state.turn) {
+    const direction = state.turn;
+    state.turn = null;
+    content.classList.remove('turn-next', 'turn-prev');
+    void content.offsetWidth;
+    content.classList.add('turn-' + direction);
+  }
+
   if (!keepScroll) window.scrollTo(0, 0);
   if (pushHash) {
     const hash = '#/' + state.book.id + '/' + state.chapter;
@@ -682,6 +704,8 @@ async function render(pushHash, keepScroll) {
   try {
     localStorage.setItem('kjv.last', state.book.id + '/' + state.chapter);
   } catch (e) { /* ignore */ }
+
+  alignTask = alignChapter(state.book, chapter);
 }
 
 function step(delta) {
@@ -697,12 +721,13 @@ function step(delta) {
     book = BOOKS[bookIndex + 1];
     chapter = 1;
   }
-  go(book, chapter);
+  go(book, chapter, undefined, delta > 0 ? 'next' : 'prev');
 }
 
-function go(book, chapter, verse) {
+function go(book, chapter, verse, turn) {
   state.book = book;
   state.chapter = Math.min(Math.max(1, chapter), book.chapters);
+  state.turn = turn || null;
   render(true).then(() => {
     if (verse) revealVerse(verse);
   });
@@ -747,7 +772,13 @@ function sheet(title, options = {}) {
   done.className = 'link';
   done.textContent = 'Done';
   done.addEventListener('click', closeSheet);
-  head.append(heading, done);
+  /* An occasional action belongs in the header, beside Done, the way the app
+     puts copy on the verse sheet: out of the reading path, one thumb away. */
+  const tools = document.createElement('div');
+  tools.className = 'sheet-tools';
+  if (options.action) tools.append(options.action);
+  tools.append(done);
+  head.append(heading, tools);
 
   const body = document.createElement('div');
   body.className = 'sheet-body';
@@ -766,6 +797,12 @@ function sheet(title, options = {}) {
 /* -------------------------------------------------------------- word study */
 
 async function wordStudy(verse, index) {
+  /* Alignment runs behind the paint; a hold taken in the instant after a turn
+     waits for it rather than showing a word with no number behind it. */
+  if (alignTask) {
+    try { await alignTask; } catch (e) { /* fall back to the plain word */ }
+  }
+
   const list = state.words.get(verse.number) || [];
   const held = list.find((w) => index >= w.start && index < w.end);
   const label = held ? trimWord(held.text) : wordAt(verse.text, index);
@@ -1043,7 +1080,54 @@ function preloadOccurrences() {
 function openVerseMenu(verse) {
   const reference = state.book.name + ' ' + state.chapter + ':' + verse.number;
   const key = keyOf(state.book, state.chapter, verse.number);
-  const body = sheet(reference);
+
+  /* Copy, in the header where the app puts it: tap for the verse and its
+     reference, hold for the reference alone. It is not the phone's own copy
+     menu - that one takes the long press that belongs to the word lookup. */
+  const copyButton = document.createElement('button');
+  copyButton.type = 'button';
+  copyButton.className = 'icon-btn';
+  copyButton.title = 'Copy the verse and reference \u00B7 hold for the reference alone';
+  copyButton.setAttribute('aria-label', 'Copy the verse and reference; hold to copy the reference alone');
+  copyButton.innerHTML =
+    '<svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.9" stroke-linejoin="round">' +
+    '<rect x="9" y="9" width="11" height="11" rx="2"></rect>' +
+    '<path d="M6 15H5.5A1.5 1.5 0 0 1 4 13.5v-9A1.5 1.5 0 0 1 5.5 3h9A1.5 1.5 0 0 1 16 4.5V5"></path>' +
+    '</svg>';
+
+  let copyTimer = null;
+  let copiedReference = false;
+  const stopCopy = () => {
+    if (copyTimer) clearTimeout(copyTimer);
+    copyTimer = null;
+  };
+
+  copyButton.addEventListener('pointerdown', (event) => {
+    stopCopy();
+    copiedReference = false;
+    /* A 21px target is easy to drift off; the capture keeps the hold alive. */
+    try { copyButton.setPointerCapture?.(event.pointerId); } catch (e) { /* older browsers */ }
+    copyTimer = setTimeout(() => {
+      copyTimer = null;
+      copiedReference = true;
+      copy(reference);
+    }, 500);
+  });
+  copyButton.addEventListener('pointerup', stopCopy);
+  copyButton.addEventListener('pointercancel', () => { stopCopy(); copiedReference = false; });
+  copyButton.addEventListener('click', () => {
+    stopCopy();
+    if (copiedReference) {
+      copiedReference = false;
+      closeSheet();
+      return;
+    }
+    copy(verse.text + '\n' + reference + ' (KJV)');
+    closeSheet();
+  });
+
+  const body = sheet(reference, { action: copyButton });
   const redraw = () => { closeSheet(); render(false, true); };
 
   const swatches = document.createElement('div');
@@ -1107,49 +1191,6 @@ function openVerseMenu(verse) {
     });
     body.append(remove);
   }
-
-  /* One copy button, two lengths: a tap takes the verse with its reference, a
-     press takes the reference alone. Three buttons for three cases was clutter. */
-  const copyButton = document.createElement('button');
-  copyButton.type = 'button';
-  copyButton.className = 'wide';
-  copyButton.textContent = 'Copy verse';
-
-  let copyTimer = null;
-  let copiedReference = false;
-  const stopCopy = () => {
-    if (copyTimer) clearTimeout(copyTimer);
-    copyTimer = null;
-  };
-
-  copyButton.addEventListener('pointerdown', () => {
-    stopCopy();
-    copiedReference = false;
-    copyTimer = setTimeout(() => {
-      copyTimer = null;
-      copiedReference = true;
-      copy(reference);
-    }, 500);
-  });
-  copyButton.addEventListener('pointerup', stopCopy);
-  copyButton.addEventListener('pointercancel', stopCopy);
-  copyButton.addEventListener('pointerleave', stopCopy);
-  copyButton.addEventListener('click', () => {
-    stopCopy();
-    if (copiedReference) {
-      copiedReference = false;
-      closeSheet();
-      return;
-    }
-    copy(verse.text + '\n' + reference + ' (KJV)');
-    closeSheet();
-  });
-
-  const copyHint = document.createElement('p');
-  copyHint.className = 'credit';
-  copyHint.textContent = 'Tap for the verse and reference \u00B7 hold for the reference alone';
-
-  body.append(copyButton, copyHint);
 }
 
 function copy(text) {
@@ -1665,8 +1706,6 @@ function lookupAt(x, y, verseEl) {
   const total = offsetInVerse(verseEl, node, offset);
   const index = wordIndexAt(verse.text, total);
   if (index < 0) return;
-  const selection = window.getSelection();
-  if (selection) selection.removeAllRanges();
   wordStudy(verse, index);
 }
 
