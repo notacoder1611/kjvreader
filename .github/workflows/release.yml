@@ -1,0 +1,119 @@
+name: Build and release the APK
+
+# Every push to main builds the app and puts the APK on the release for the
+# version in app/build.gradle.kts. There is no tag to remember and nothing to run
+# by hand: push, wait, download.
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the version out of the build file
+        id: version
+        run: |
+          name=$(sed -n 's/^ *versionName *= *"\(.*\)"/\1/p' app/build.gradle.kts)
+          code=$(sed -n 's/^ *versionCode *= *\([0-9]*\)/\1/p' app/build.gradle.kts)
+          if [ -z "$name" ] || [ -z "$code" ]; then
+            echo "Could not read versionName/versionCode from app/build.gradle.kts"
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "KJV Reader $name (versionCode $code)"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install the SDK the build asks for
+        run: |
+          yes | sdkmanager --install "platforms;android-34" "build-tools;34.0.0" > /dev/null || true
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Assemble the release build
+        run: ./gradlew --no-daemon assembleRelease
+
+      # The project has no signing config on purpose, so the build comes out
+      # unsigned. It is signed here instead: with the project's own key when the
+      # four secrets are present, otherwise with a throwaway one so that there is
+      # still an APK that installs.
+      - name: Sign it
+        id: sign
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          set -euo pipefail
+          build_tools="$ANDROID_HOME/build-tools/34.0.0"
+          unsigned=app/build/outputs/apk/release/app-release-unsigned.apk
+          ls -l "$unsigned"
+          mkdir -p dist
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+            ks="$RUNNER_TEMP/release.keystore"
+            alias="$KEY_ALIAS"
+            storepass="$KEYSTORE_PASSWORD"
+            keypass="${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
+            apk="dist/kjvreader-$VERSION.apk"
+            echo "note=It is signed with the project's own key, so it installs over the previous version." >> "$GITHUB_OUTPUT"
+          else
+            ks="$RUNNER_TEMP/ci-debug.keystore"
+            keytool -genkeypair -keystore "$ks" -storepass android -keypass android \
+              -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US" > /dev/null 2>&1
+            alias=androiddebugkey
+            storepass=android
+            keypass=android
+            apk="dist/kjvreader-$VERSION-debug-key.apk"
+            echo "note=It is signed with a throwaway key made for this run: it installs, but uninstall the app first and back up notes and folders from the overflow menu, because the next build will be signed with a different key." >> "$GITHUB_OUTPUT"
+          fi
+          "$build_tools/zipalign" -p -f 4 "$unsigned" dist/aligned.apk
+          "$build_tools/apksigner" sign --ks "$ks" --ks-key-alias "$alias" \
+            --ks-pass "pass:$storepass" --key-pass "pass:$keypass" \
+            --out "$apk" dist/aligned.apk
+          rm dist/aligned.apk
+          "$build_tools/apksigner" verify --print-certs "$apk"
+          ls -l dist
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.name }}
+          name: KJV Reader ${{ steps.version.outputs.name }}
+          body: |
+            Offline King James Bible reader for Android, built from `main` at
+            ${{ github.sha }}.
+
+            ${{ steps.sign.outputs.note }}
+
+            ${{ steps.version.outputs.code }} and above install on Android 5.0 or
+            later. See the README for the version table.
+          files: dist/*.apk
+          fail_on_unmatched_files: true
+
+      # A release asset is the download; the run's own artifact is the fallback if
+      # the release step is ever refused.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kjvreader-${{ steps.version.outputs.name }}
+          path: dist/*.apk
