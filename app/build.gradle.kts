@@ -11,8 +11,8 @@ android {
         applicationId = "com.realsneed.biblereader"
         minSdk = 21
         targetSdk = 34
-        versionCode = 39
-        versionName = "0.25.5"
+        versionCode = 40
+        versionName = "0.25.6"
         resourceConfigurations += listOf("en")
 
     }
