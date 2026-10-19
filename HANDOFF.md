@@ -6,8 +6,8 @@ from, what is verified, and what is still open.
 
 Two other documents carry the rest:
 
-* **`README.md`** - a concise overview: features, build, data, verification and
-  open work. The detailed step-by-step build log is kept privately by the owner.
+* **`README.md`** - a short project summary. The detailed step-by-step build log
+  is kept privately by the owner.
 * **The Google Doc** - requirements and bugs as the owner tracks them. It is
   shared privately; ask the owner for access.
 
