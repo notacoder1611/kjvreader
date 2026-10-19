@@ -12,8 +12,8 @@
  * cache.
  */
 
-const VERSION = 'kjv-web-4';
-const STAMP = '4';
+const VERSION = 'kjv-web-5';
+const STAMP = '5';
 const SHELL = [
   './',
   './index.html',
