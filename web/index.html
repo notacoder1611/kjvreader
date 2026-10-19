@@ -12,7 +12,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
-<link rel="stylesheet" href="style.css">
+<!-- The ?v= stamp is the deploy's identity. GitHub Pages caches files for ten
+     minutes and the service worker caches the shell, so without it a fix can sit
+     unseen behind two layers of cache. Bump it whenever app.js or style.css
+     changes, and bump VERSION in sw.js with it. -->
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
@@ -35,6 +39,23 @@
 
 <p id="status" class="status" hidden></p>
 
-<script src="app.js" defer></script>
+<script>
+  /* When a newly deployed worker takes over, show the new one straight away
+     rather than leaving the reader on the previous build until they reload. */
+  if ('serviceWorker' in navigator) {
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloaded) return;
+      reloaded = true;
+      location.reload();
+    });
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.getRegistration().then((registration) => {
+        if (registration) registration.update().catch(() => {});
+      }).catch(() => {});
+    });
+  }
+</script>
+<script src="app.js?v=3" defer></script>
 </body>
 </html>
